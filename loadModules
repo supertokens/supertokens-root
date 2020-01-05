@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# ignore changes to these two files
+git update-index --skip-worktree modules.txt
+git update-index --skip-worktree settings.gradle
+git update-index --skip-worktree .idea/runConfigurations/CLI_Main.xml
+
+
+prefix=`./utils/project-prefix`
+
+url=https://bitbucket.org/vrai-labs
+if [[ $1 = "--ssh" ]]
+then
+  url=git@bitbucket.org:vrai-labs
+fi
+
+if [ $prefix == "supertokens" ]
+then
+	url=https://github.com/supertokens
+	if [[ $1 = "--ssh" ]]
+  then
+    url=git@github.com:supertokens
+  fi
+fi
+
+# clear settings.gradle
+> settings.gradle
+
+echo "include 'supertokens-core:cli'" >> settings.gradle
+echo "include 'supertokens-core:downloader'" >> settings.gradle
+
+# add new line char at the end in case it's not there for looping
+echo  >> modules.txt
+
+# looping
+cat modules.txt | while read line
+do
+	if [[ ! -z "$line" ]] && [[ $line != //* ]]
+	then
+		while IFS=',' read -ra ADDR; do
+			counter=0
+      		for i in "${ADDR[@]}"; do
+      			if [ $counter == 0 ]
+      			then
+      				repo_name="$i"
+          		else
+          			branch="$i"
+          		fi
+          		counter=$(($counter+1))
+      		done
+ 		done <<< "$line"
+ 		
+ 		# we now have $repo_name and $branch for that repo
+ 		
+ 		git clone --branch $branch $url/$prefix-$repo_name.git
+ 		
+ 		cp ./utils/pre-commit $prefix-$repo_name/.git/hooks/
+ 		
+ 		cp ./utils/addDevTag $prefix-$repo_name/addDevTag
+ 		cp ./utils/addReleaseTag $prefix-$repo_name/addReleaseTag
+ 		
+ 		echo "include '$prefix-$repo_name'" >> settings.gradle
+   	fi
+done
+
+
+# remove new line char from end for next use of this script
+printf %s "$(< modules.txt)" > modules.txt

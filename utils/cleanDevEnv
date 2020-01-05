@@ -1,0 +1,10 @@
+rm -rf core
+rm -rf plugin-interface
+rm -rf plugin
+rm -rf cli
+rm -rf downloader
+rm version.yaml
+rm config.yaml
+rm licenseKey
+rm install
+rm install.bat

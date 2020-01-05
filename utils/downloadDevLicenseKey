@@ -1,0 +1,33 @@
+# usage: downloadDevLicenseKey (FREE | COMMERCIAL | COMMERCIAL_TRIAL) (DOWNGRADE | STOP | NA) 
+
+if [ $1 = "FREE" ] || [ $1 = "COMMERCIAL" ] || [ $1 = "COMMERCIAL_TRIAL" ] 
+then
+	continue=1
+else
+	echo "First param must be FREE | COMMERCIAL | COMMERCIAL_TRIAL"
+	exit 1
+fi
+
+if [ $2 = "DOWNGRADE" ] || [ $2 = "STOP" ] || [ $2 = "NA" ] 
+then
+	continue=1
+else
+	echo "Second param must be DOWNGRADE | STOP | NA"
+	exit 1
+fi
+
+expired=false
+
+if [ "$3" = "true" ] || [ "$3" = "false" ]
+then
+	expired=$3
+fi
+
+planType=$1
+onExpiry=$2
+password=`cat apiPassword`
+
+curl -s -X GET \
+  "https://api.supertokens.io/0/development/license-key?password=$password&planType=$planType&onExpiry=$onExpiry&expired=$expired" \
+  -H 'api-version: 0' \
+  -H 'cache-control: no-cache' > licenseKey

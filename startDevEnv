@@ -1,0 +1,23 @@
+# usage: startDevEnv (FREE | COMMERCIAL | COMMERCIAL_TRIAL) (DOWNGRADE | STOP | NA) 
+
+function cleanup {
+  ./utils/cleanDevEnv
+}
+
+trap cleanup EXIT
+
+./utils/downloadDevLicenseKey $1 $2
+
+if [[ $? -ne 0 ]]
+then
+	exit 1
+fi
+
+./utils/setupDevEnv
+
+# we wait for user to end the session
+while [[ true ]]
+do
+    echo "Running dev env"
+    sleep 2
+done

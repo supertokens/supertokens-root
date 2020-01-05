@@ -1,0 +1,47 @@
+
+> config_temp.yaml
+
+prefix=`./utils/project-prefix`
+
+# add new line char at the end in case it's not there for looping
+echo  >> modules.txt
+
+# looping
+cat modules.txt | while read line
+do
+	if [[ ! -z "$line" ]] && [[ $line != //* ]]
+	then
+		while IFS=',' read -ra ADDR; do
+			counter=0
+      		for i in "${ADDR[@]}"; do
+      			if [ $counter == 0 ]
+      			then
+      				repo_name="$i"
+          		fi
+          		counter=$(($counter+1))
+      		done
+ 		done <<< "$line"
+ 		
+ 		dir_name=$prefix-$repo_name
+ 		
+ 		# populate config file
+ 		
+ 		if [[ $dir_name = *"-core" ]]
+ 		then
+ 			cat $dir_name/devConfig.yaml >> config_temp.yaml
+ 			echo "" >> config_temp.yaml
+ 			echo "" >> config_temp.yaml
+ 		elif [[ $dir_name = *"-plugin-interface" ]]
+ 		then
+ 			continue=1
+ 		else
+ 			cat $dir_name/devConfig.yaml >> config_temp.yaml
+ 			`echo ""` >> config_temp.yaml
+ 		fi
+   	fi
+done
+
+# remove new line char from end for next use of this script
+printf %s "$(< modules.txt)" > modules.txt
+
+mv config_temp.yaml config.yaml

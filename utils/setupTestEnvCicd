@@ -1,0 +1,153 @@
+# load version and jars
+# setup jars, dependencies and version
+
+./gradlew clean
+> version_temp.yaml
+
+prefix=`./utils/project-prefix`
+
+# add new line char at the end in case it's not there for looping
+echo  >> modules.txt
+
+# looping
+cat modules.txt | while read line
+do
+	if [[ ! -z "$line" ]] && [[ $line != //* ]]
+	then
+		while IFS=',' read -ra ADDR; do
+			counter=0
+      		for i in "${ADDR[@]}"; do
+      			if [ $counter == 0 ]
+      			then
+      				repo_name="$i"
+          		fi
+          		counter=$(($counter+1))
+      		done
+ 		done <<< "$line"
+ 		
+ 		dir_name=$prefix-$repo_name
+ 		
+ 		# build
+ 		echo ""
+ 		echo "Building $dir_name..."
+ 		(cd $dir_name/ && ./runBuild noJarFolderChange)
+ 		
+ 		# move jars to relevant place for testing
+
+ 		if [[ $dir_name = *"-core" ]]
+ 		then
+ 		    (cd $dir_name/cli/ && ./runBuild noJarFolderChange)
+ 		    (cd $dir_name/downloader/ && ./runBuild noJarFolderChange)
+ 			mkdir core > /dev/null 2>&1
+ 			cp $dir_name/build/libs/* core
+ 			
+ 			# add to version_temp.yaml
+ 			core_version=`cat $dir_name/build.gradle | grep -e "version =" -e "version="`
+ 			while IFS='"' read -ra ADDR; do
+				counter=0
+				for i in "${ADDR[@]}"; do
+					if [ $counter == 1 ]
+					then
+						core_version=$i
+			  		fi
+			  		counter=$(($counter+1))
+				done
+			done <<< "$core_version"
+ 			echo "core_version: $core_version" >> version_temp.yaml
+
+            curl -X GET \
+                "https://api.supertokens.io/core/dependency/jars?version=$core_version&planType=FREE&mode=DEV&withSource=false" \
+                -H 'api-version: 0' | jq '.links' | jq -c '.[]' | while read i; do \
+                wget -P core/ `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
+			
+            mkdir cli > /dev/null 2>&1
+            cp $dir_name/cli/build/libs/* cli
+            curl -X GET \
+                "https://api.supertokens.io/cli/dependency/jars?version=$core_version&planType=FREE&mode=DEV
+                &withSource=false" \
+                -H 'api-version: 0' | jq '.links' | jq -c '.[]' | while read i; do \
+                wget -P cli/ `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
+
+            mkdir downloader > /dev/null 2>&1
+            cp $dir_name/downloader/build/libs/* downloader
+
+            cp $dir_name/install install
+            cp $dir_name/install.bat install.bat
+ 		elif [[ $dir_name = *"-plugin-interface" ]]
+ 		then
+ 			mkdir plugin-interface > /dev/null 2>&1
+ 			cp $dir_name/build/libs/* plugin-interface
+ 			
+ 			# add to version_temp.yaml
+ 			pi_version=`cat $dir_name/build.gradle | grep -e "version =" -e "version="`
+ 			while IFS='"' read -ra ADDR; do
+				counter=0
+				for i in "${ADDR[@]}"; do
+					if [ $counter == 1 ]
+					then
+						pi_version=$i
+			  		fi
+			  		counter=$(($counter+1))
+				done
+			done <<< "$pi_version"
+			echo "plugin_interface_version: $pi_version" >> version_temp.yaml
+            
+            curl -X GET \
+                "https://api.supertokens.io/plugin-interface/dependency/jars?version=$pi_version&planType=FREE&mode=DEV&withSource=false" \
+                -H 'api-version: 0' | jq '.links' | jq -c '.[]' | while read i; do \
+                wget -P plugin-interface/ `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
+			
+ 		else
+ 			mkdir plugin > /dev/null 2>&1
+ 			cp $dir_name/build/libs/* plugin
+ 			
+ 			# add to version_temp.yaml
+ 			p_version=`cat $dir_name/build.gradle | grep -e "version =" -e "version="`
+ 			while IFS='"' read -ra ADDR; do
+				counter=0
+				for i in "${ADDR[@]}"; do
+					if [ $counter == 1 ]
+					then
+						p_version=$i
+			  		fi
+			  		counter=$(($counter+1))
+				done
+			done <<< "$p_version"
+			p_name=`cat $dir_name/build.gradle | grep -e "def pluginName =" -e "def pluginName="`
+ 			while IFS='"' read -ra ADDR; do
+				counter=0
+				for i in "${ADDR[@]}"; do
+					if [ $counter == 1 ]
+					then
+						p_name=$i
+			  		fi
+			  		counter=$(($counter+1))
+				done
+			done <<< "$p_name"
+			echo "plugin_version: $p_version" >> version_temp.yaml
+			echo "plugin_name: $p_name" >> version_temp.yaml
+            
+            curl -X GET \
+                "https://api.supertokens.io/plugin/dependency/jars?version=$p_version&name=$p_name&planType=FREE&mode=DEV&withSource=false" \
+                -H 'api-version: 0' | jq '.links' | jq -c '.[]' | while read i; do \
+                wget -P plugin/ `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
+			
+ 		fi
+ 		
+   	fi
+done
+
+# remove new line char from end for next use of this script
+printf %s "$(< modules.txt)" > modules.txt
+
+mv version_temp.yaml version.yaml
+
+
+# fetch default license key and config
+./utils/downloadDevLicenseKey FREE DOWNGRADE
+./utils/createConfigFileForTesting
+mkdir temp
+cp config.yaml temp/config.yaml
+cp licenseKey temp/licenseKey
+rm config.yaml
+rm licenseKey

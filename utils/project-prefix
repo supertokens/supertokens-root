@@ -1,0 +1,21 @@
+result=${PWD##*/}          # to assign to a variable
+
+folder=`printf '%s\n' "${PWD##*/}"`
+
+if [[ $folder == "supertokens-root" ]]
+then
+	echo "supertokens"
+	exit 0
+fi
+
+if [[ $folder == "com-root" ]]
+then
+	echo "com"
+	exit 0
+fi
+
+if [[ $folder == "ent-root" ]]
+then
+	echo "ent"
+	exit 0
+fi

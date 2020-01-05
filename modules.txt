@@ -1,0 +1,4 @@
+// put module name like <module name>,<branch name> and then call ./loadModules script
+core,0.0
+plugin-interface,0.0
+mysql-plugin,0.0

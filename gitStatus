@@ -1,0 +1,39 @@
+#!/bin/bash
+
+prefix=`./utils/project-prefix`
+
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+printf "${YELLOW}$prefix-root${NC}\n"
+git status
+
+
+# add new line char at the end in case it's not there for looping
+echo  >> modules.txt
+
+# looping
+cat modules.txt | while read line
+do
+	if [[ ! -z "$line" ]] && [[ $line != //* ]]
+	then
+		while IFS=',' read -ra ADDR; do
+			counter=0
+      		for i in "${ADDR[@]}"; do
+      			if [ $counter == 0 ]
+      			then
+      				repo_name="$i"
+          		fi
+          		counter=$(($counter+1))
+      		done
+ 		done <<< "$line"
+		
+		YELLOW='\033[1;33m'
+		NC='\033[0m' # No Color
+ 		printf "\n\n${YELLOW}$prefix-$repo_name${NC}\n"
+ 		(cd $prefix-$repo_name/ && git status)
+   	fi
+done
+
+
+# remove new line char from end for next use of this script
+printf %s "$(< modules.txt)" > modules.txt

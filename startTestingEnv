@@ -1,0 +1,43 @@
+# usage: startTestingEnv [--cicd] [--wait]
+
+function cleanup {
+	if [[ $1 = "--cicd" ]]
+	then
+		./utils/cleanTestEnvCicd
+	else
+		./utils/cleanTestEnvLocal
+	fi 
+}
+
+trap cleanup EXIT
+
+wait=false
+
+if [[ $1 = "--cicd" ]]
+then
+	if [[ $2 = "--wait" ]]
+	then
+		wait=true
+	fi
+	./utils/setupTestEnvCicd
+else
+	if [[ $1 = "--wait" ]]
+	then
+		wait=true
+	fi
+	./utils/setupTestEnvLocal	
+fi
+
+
+if [[ $wait = "true" ]]
+then
+	# we wait for user to end the session
+	while [[ true ]]
+	do
+		echo "Running test env"
+	    sleep 2
+	done
+else
+	# ../ because the tests are run relative to the project's folder.
+	./gradlew test
+fi
