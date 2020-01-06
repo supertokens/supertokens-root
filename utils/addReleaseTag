@@ -232,7 +232,7 @@ fi
 
 if [[ $response == "true" ]]
 then
-  echo "pushing to mater..."
+  echo "pushing to master..."
   if [[ $branch_name == "(unnamed branch)" ]]
   then
     git checkout -b forrelease
