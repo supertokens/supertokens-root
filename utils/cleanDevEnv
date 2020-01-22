@@ -8,3 +8,6 @@ rm config.yaml
 rm licenseKey
 rm install
 rm install.bat
+rm LICENSE.md
+rm OpenSourceLicenses.pdf
+rm SuperTokensLicense.pdf

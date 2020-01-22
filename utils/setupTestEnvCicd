@@ -73,6 +73,10 @@ do
 
             cp $dir_name/install install
             cp $dir_name/install.bat install.bat
+
+			cp $dir_name/LICENSE.md LICENSE.md
+            cp $dir_name/OpenSourceLicenses.pdf OpenSourceLicenses.pdf
+            cp $dir_name/SuperTokensLicense.pdf SuperTokensLicense.pdf
  		elif [[ $dir_name = *"-plugin-interface" ]]
  		then
  			mkdir plugin-interface > /dev/null 2>&1
