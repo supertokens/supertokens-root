@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="supertokens-root.supertokens-core.cli.main" target="11" />
+      <module name="supertokens-root.supertokens-core.cli.test" target="11" />
+      <module name="supertokens-root.supertokens-core.downloader.main" target="11" />
+      <module name="supertokens-root.supertokens-core.downloader.test" target="11" />
+      <module name="supertokens-root.supertokens-core.main" target="11" />
+      <module name="supertokens-root.supertokens-core.test" target="11" />
+      <module name="supertokens-root.supertokens-mysql-plugin.main" target="11" />
+      <module name="supertokens-root.supertokens-mysql-plugin.test" target="11" />
+      <module name="supertokens-root.supertokens-plugin-interface.main" target="11" />
+      <module name="supertokens-root.supertokens-plugin-interface.test" target="11" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
