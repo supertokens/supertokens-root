@@ -4,6 +4,8 @@
 git update-index --skip-worktree modules.txt
 git update-index --skip-worktree settings.gradle
 git update-index --skip-worktree .idea/runConfigurations/CLI_Main.xml
+git update-index --skip-worktree .idea/compiler.xml
+git update-index --skip-worktree .idea/vcs.xml
 
 
 prefix=`./utils/project-prefix`
