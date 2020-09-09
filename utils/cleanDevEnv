@@ -8,5 +8,3 @@ rm config.yaml
 rm install
 rm install.bat
 rm LICENSE.md
-rm OpenSourceLicenses.pdf
-rm SuperTokensLicense.pdf
