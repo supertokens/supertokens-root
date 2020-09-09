@@ -5,7 +5,6 @@ rm -rf cli
 rm -rf downloader
 rm version.yaml
 rm config.yaml
-rm licenseKey
 rm install
 rm install.bat
 rm LICENSE.md

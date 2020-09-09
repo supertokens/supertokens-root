@@ -6,8 +6,6 @@ function cleanup {
 
 trap cleanup EXIT
 
-./utils/downloadDevLicenseKey $1 $2
-
 if [[ $? -ne 0 ]]
 then
 	exit 1

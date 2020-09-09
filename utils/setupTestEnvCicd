@@ -148,10 +148,7 @@ mv version_temp.yaml version.yaml
 
 
 # fetch default license key and config
-./utils/downloadDevLicenseKey FREE NA
 ./utils/createConfigFileForTesting
 mkdir temp
 cp config.yaml temp/config.yaml
-cp licenseKey temp/licenseKey
 rm config.yaml
-rm licenseKey
