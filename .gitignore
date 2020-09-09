@@ -54,7 +54,6 @@ ent-*
 /cli/
 /downloader/
 /config.yaml
-/licenseKey
 /logs
 /version.yaml
 /.webserver-temp
