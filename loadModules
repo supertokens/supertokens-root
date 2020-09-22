@@ -16,13 +16,11 @@ then
   url=git@bitbucket.org:vrai-labs
 fi
 
-if [ $prefix == "supertokens" ]
-then
-	url=https://github.com/supertokens
-	if [[ $1 = "--ssh" ]]
-  then
-    url=git@github.com:supertokens
-  fi
+if [ $prefix == "supertokens" ]; then
+	url=https://github.com/
+	if [[ $1 = "--ssh" ]]; then
+		url=git@github.com:
+	fi
 fi
 
 # clear settings.gradle
@@ -41,20 +39,26 @@ do
 	then
 		while IFS=',' read -ra ADDR; do
 			counter=0
+			user_name=supertokens
       		for i in "${ADDR[@]}"; do
-      			if [ $counter == 0 ]
-      			then
-      				repo_name="$i"
-          		else
-          			branch="$i"
+				if [ $counter == 0 ];
+				 then
+					repo_name="$i"
+				else
+					if [ $counter == 1 ];
+					 then
+						branch="$i"
+					else
+						user_name="$i"
+					fi
           		fi
           		counter=$(($counter+1))
       		done
  		done <<< "$line"
  		
- 		# we now have $repo_name and $branch for that repo
+ 		# we now have $repo_name and $branch and $user_name if exists for that repo
  		
- 		git clone --branch $branch $url/$prefix-$repo_name.git
+ 		git clone --branch $branch $url$user_name/$prefix-$repo_name.git
  		
  		cp ./utils/pre-commit $prefix-$repo_name/.git/hooks/
  		
