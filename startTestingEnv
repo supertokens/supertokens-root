@@ -1,4 +1,4 @@
-# usage: startTestingEnv [--cicd] [--wait]
+#!/bin/bash
 
 function cleanup {
 	if [[ $1 = "--cicd" ]]
