@@ -65,6 +65,9 @@ then
     exit 1
 fi
 
+# add empty commit to rebuild all jars'
+
+git commit -am 'rebuild all jars'
 
 # tag this commit and push it------------
 
