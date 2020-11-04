@@ -29,8 +29,11 @@ do
 		
 		YELLOW='\033[1;33m'
 		NC='\033[0m' # No Color
- 		printf "\n\n${YELLOW}$prefix-$repo_name${NC}\n"
- 		(cd $prefix-$repo_name/ && git status)
+		if [[ $repo_name != "sqlite-plugin" ]]
+		then
+ 			printf "\n\n${YELLOW}$prefix-$repo_name${NC}\n"
+ 			(cd $prefix-$repo_name/ && git status)
+		fi
    	fi
 done
 
