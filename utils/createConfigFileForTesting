@@ -34,7 +34,8 @@ do
  		elif [[ $dir_name = *"-plugin-interface" ]]
  		then
  			continue=1
- 		else
+ 		elif [[ $repo_name != "sqlite-plugin" ]]
+        then
  			cat $dir_name/devConfig.yaml >> config_temp.yaml
  			`echo ""` >> config_temp.yaml
  		fi

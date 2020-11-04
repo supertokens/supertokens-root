@@ -25,11 +25,14 @@ do
  		done <<< "$line"
  		
  		dir_name=$prefix-$repo_name
- 		
- 		# build
- 		echo ""
- 		echo "Building $dir_name..."
- 		(cd $dir_name/ && ./runBuild noJarFolderChange)
+
+ 		if [[ $repo_name != "sqlite-plugin" ]]
+        then
+            # build
+            echo ""
+            echo "Building $dir_name..."
+            (cd $dir_name/ && ./runBuild noJarFolderChange)
+ 		fi
  		
  		# move jars to relevant place for testing
 
@@ -86,7 +89,8 @@ do
 			done <<< "$pi_version"
 			echo "plugin_interface_version: $pi_version" >> version_temp.yaml
 			
- 		else
+ 		elif [[ $repo_name != "sqlite-plugin" ]]
+ 		then
  			mkdir plugin > /dev/null 2>&1
  			cp $dir_name/build/libs/* plugin
  			cp $dir_name/build/dependencies/* plugin > /dev/null 2>&1
@@ -117,7 +121,8 @@ do
 			done <<< "$p_name"
 			echo "plugin_version: $p_version" >> version_temp.yaml
 			echo "plugin_name: $p_name" >> version_temp.yaml
-			
+		else
+		    mkdir plugin > /dev/null 2>&1
  		fi
  		
    	fi

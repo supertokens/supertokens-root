@@ -85,7 +85,8 @@ do
 			done <<< "$pi_version"
 			echo "plugin_interface_version: $pi_version" >> version_temp.yaml
 			
- 		else
+ 		elif [[ $repo_name != "sqlite-plugin" ]]
+        then
  			mkdir plugin > /dev/null 2>&1
  			cp $dir_name/build/libs/* plugin
  			cp $dir_name/build/dependencies/* plugin > /dev/null 2>&1
@@ -116,7 +117,8 @@ do
 			done <<< "$p_name"
 			echo "plugin_version: $p_version" >> version_temp.yaml
 			echo "plugin_name: $p_name" >> version_temp.yaml
-			
+		else
+        	mkdir plugin > /dev/null 2>&1
  		fi
  		
  		
@@ -130,7 +132,8 @@ do
  		elif [[ $dir_name = *"-plugin-interface" ]]
  		then
  			continue=1
- 		else
+ 		elif [[ $repo_name != "sqlite-plugin" ]]
+ 		then
  			cat $dir_name/devConfig.yaml >> config_temp.yaml
  			`echo ""` >> config_temp.yaml
  		fi

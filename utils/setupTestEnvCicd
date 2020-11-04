@@ -26,11 +26,14 @@ do
  		done <<< "$line"
  		
  		dir_name=$prefix-$repo_name
- 		
- 		# build
- 		echo ""
- 		echo "Building $dir_name..."
- 		(cd $dir_name/ && ./runBuild noJarFolderChange)
+
+ 		if [[ $repo_name != "sqlite-plugin" ]]
+        then
+            # build
+            echo ""
+            echo "Building $dir_name..."
+            (cd $dir_name/ && ./runBuild noJarFolderChange)
+ 		fi
  		
  		# move jars to relevant place for testing
 
@@ -99,7 +102,8 @@ do
                 -H 'api-version: 0' | jq '.links' | jq -c '.[]' | while read i; do \
                 wget -P plugin-interface/ `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
 			
- 		else
+ 		elif [[ $repo_name != "sqlite-plugin" ]]
+        then
  			mkdir plugin > /dev/null 2>&1
  			cp $dir_name/build/libs/* plugin
  			
@@ -134,7 +138,9 @@ do
                 -H 'api-version: 0' | jq '.links' | jq -c '.[]' | while read i; do \
                 wget -P plugin/ `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
 			
- 		fi
+ 		else
+            mkdir plugin > /dev/null 2>&1
+        fi
  		
    	fi
 done
