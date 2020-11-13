@@ -25,10 +25,13 @@ do
  		
  		dir_name=$prefix-$repo_name
  		
- 		# build
- 		echo ""
- 		echo "Building $dir_name..."
- 		(cd $dir_name/ && ./runBuild noJarFolderChange)
+ 		if [[ $repo_name != "sqlite-plugin" ]]
+        then
+            # build
+            echo ""
+            echo "Building $dir_name..."
+            (cd $dir_name/ && ./runBuild noJarFolderChange)
+        fi
  		
  		# move jars to relevant place for testing
 
