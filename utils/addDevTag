@@ -74,6 +74,13 @@ fi
 # add an empty commit if the user has not given a commit hash so that we are sure it's built------------
 if [ $# -eq 0 ]
 then
+    ./runBuild
+    if [[ $? -ne 0 ]]
+    then
+        echo "Failed to build"
+        exit 1
+    fi
+    git add --all ./jar/
     git commit --allow-empty -m"adding dev-v$version tag to this commit to ensure building"
     git push
 	commit_hash=`git log --pretty=format:'%H' -n 1`

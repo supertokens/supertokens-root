@@ -54,7 +54,7 @@ then
 	exit 1
 fi
 
-git add --all ./jar/
+git restore ./jar/*
 
 folder=`printf '%s\n' "${PWD##*/}"`
 if [[ $folder = *"-core" ]]
