@@ -44,8 +44,6 @@ else
 	exit 1	
 fi
 
-# this will create the jars to push to git
-
 ./runBuild
 
 if [[ $? -ne 0 ]]
@@ -54,4 +52,6 @@ then
 	exit 1
 fi
 
+# We have to do git restore twice like this other jar changes in ./jar/* do not get reset
+git restore ./jar/*.jar
 git restore ./**/jar/*.jar
