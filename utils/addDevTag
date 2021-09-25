@@ -80,7 +80,7 @@ then
         echo "Failed to build"
         exit 1
     fi
-    git add --all ./*/**.jar
+    git add --all ./**/jar/*.jar
     git commit --allow-empty -m"adding dev-v$version tag to this commit to ensure building"
     git push
 	commit_hash=`git log --pretty=format:'%H' -n 1`
