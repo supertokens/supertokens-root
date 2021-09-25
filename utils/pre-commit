@@ -55,25 +55,3 @@ then
 fi
 
 git restore ./*/**.jar
-
-folder=`printf '%s\n' "${PWD##*/}"`
-if [[ $folder = *"-core" ]]
-then
-    cd cli/
-    ./runBuild
-    if [[ $? -ne 0 ]]
-    then
-        echo "Failed to build cli"
-    	exit 1
-    fi
-    git add ./jar/*
-
-    cd ../downloader/
-    ./runBuild
-    if [[ $? -ne 0 ]]
-    then
-        echo "Failed to build cli"
-        exit 1
-    fi
-    git add ./jar/*
-fi
