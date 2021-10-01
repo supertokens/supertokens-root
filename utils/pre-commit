@@ -1,3 +1,4 @@
+#!/bin/bash
 # get current version----------
 
 version=`cat build.gradle | grep -e "version =" -e "version="`
@@ -49,6 +50,13 @@ fi
 if [[ $? -ne 0 ]]
 then
     echo "Failed to build"
+	exit 1
+fi
+
+(cd ../ && ./gradlew spotlessCheck < /dev/null)
+if [[ $? -ne 0 ]]
+then
+    echo "Linting failed, please run './gradlew spotlessApply' in supertokens-root"
 	exit 1
 fi
 
