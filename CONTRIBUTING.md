@@ -4,5 +4,5 @@ While we welcome contributions, in order to get started, please sign and fill ou
 
 Once we go through your email, we will send you an API password that is required to setup a development environment
  and further instructions on getting started.
- 
+
 Thank you.
