@@ -4,7 +4,7 @@
 <a href="https://supertokens.io/discord">
 <img src="https://img.shields.io/discord/603466164219281420.svg?logo=discord"
     alt="chat on Discord"></a>
-    
+
 ## About
 This module is for development purposes of SuperTokens Community version.
 

@@ -1,5 +1,12 @@
-plugins {
 
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+plugins {
+    id "com.diffplug.spotless" version "5.15.2"
 }
 
 repositories {
@@ -8,4 +15,31 @@ repositories {
 
 dependencies {
 
+}
+
+spotless {
+  // optional: limit format enforcement to just the files changed by this feature branch
+//   ratchetFrom 'origin/master'
+
+  format 'misc', {
+    // define the files to apply `misc` to
+    target '*.gradle', '*.md', '.gitignore'
+
+    // define the steps to apply to those files
+    trimTrailingWhitespace()
+    indentWithSpaces() // or tabs. Takes an integer argument if you don't like 4
+    endWithNewline()
+  }
+  java {
+    // Inferring targets won't work here
+    target 'supertokens-*/src/**/*.java'
+
+    eclipse().configFile("${project.rootDir}/.idea/codeStyles/spotless.eclipseformat.xml")
+    // apply a specific flavor of google-java-format
+    // googleJavaFormat('1.8').aosp().reflowLongStrings()
+    // make sure every file has the following copyright header.
+    // optionally, Spotless can set copyright years by digging
+    // through git history (see "license" section below)
+    // licenseHeader '/* (C)$YEAR */'
+  }
 }
