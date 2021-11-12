@@ -82,8 +82,8 @@ then
     fi
 
     # We have to do git add twice like this other jar changes in ./jar/* do not get added
-    git add --all ./jar/ > /dev/null 2>&1
-    git add --all ./**/jar/ > /dev/null 2>&1
+    git add --all "./jar/*" > /dev/null 2>&1
+    git add --all "./**/jar/*" > /dev/null 2>&1
     git commit --allow-empty -m"adding dev-v$version tag to this commit to ensure building"
     git push
 	commit_hash=`git log --pretty=format:'%H' -n 1`

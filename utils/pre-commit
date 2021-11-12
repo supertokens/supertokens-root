@@ -55,8 +55,8 @@ fi
 
 # We have to do git restore twice like this other jar changes in ./jar/* do not get reset
 # We also have to maintain this order since in some projects ./**/jar/ does not exist
-git restore ./**/jar/ > /dev/null 2>&1
-git restore ./jar/ > /dev/null 2>&1
+git restore "./**/jar/*" > /dev/null 2>&1
+git restore "./jar/*" > /dev/null 2>&1
 
 (cd ../ && ./gradlew spotlessCheck < /dev/null)
 if [[ $? -ne 0 ]]
