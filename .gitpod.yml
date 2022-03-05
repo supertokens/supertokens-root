@@ -8,8 +8,10 @@ tasks:
 
 
 ports:
-   - port: 3000-8999
-     visibility: public
+   - port: 3306
      onOpen: ignore
+   - port: 5432
+     onOpen: ignore
+  
 
 
