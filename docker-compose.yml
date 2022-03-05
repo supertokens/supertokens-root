@@ -1,0 +1,21 @@
+version: '3'
+services:
+  supertokens_mysql_db:
+    image: mysql/mysql-server:latest
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_USER: root
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: supertokens
+      MYSQL_ROOT_HOST: '%'
+  supertokens_postgres_db:
+    image: postgres:12
+    restart: always
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_PASSWORD: root
+      POSTGRES_USER: root
+      POSTGRES_DB: supertokens
