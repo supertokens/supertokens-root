@@ -4,7 +4,7 @@
 
 tasks:
   - init: ./gradlew build
-  - init: docker-compose up
+  - init: docker-compose up -d
 
 
 ports:
