@@ -11,9 +11,11 @@ esac
 curl -o jre.zip -s -X GET \
 	"https://raw.githubusercontent.com/supertokens/jre/master/jre-15.0.1-${OS}.zip"
 
-## fetching docker-entrypoint.sh from github
-curl -o docker-entrypoint.sh -s -X GET \
+## fetching docker-entrypoint.sh from github if file doesn't exists
+if [ ! -f docker-entrypoint.sh ]; then
+    curl -o docker-entrypoint.sh -s -X GET \
     "https://raw.githubusercontent.com/supertokens/supertokens-docker-postgresql/master/docker-entrypoint.sh"
+fi
 
 ## marking docker-entrypoint.sh as executable
 chmod +x docker-entrypoint.sh
@@ -30,8 +32,7 @@ cp -r ../downloader downloader
 cp -r ../plugin-interface plugin-interface
 cp -r ../plugin plugin
 cp -r ../install ./
-cp -r ../temp/config.yaml ./
-cp -r ../temp/config.yaml config.yaml.original
+cp -r config.yaml ./
 cp -r ../version.yaml ./
 
 ## building the docker image
@@ -44,8 +45,5 @@ rm -rf downloader
 rm -rf plugin-interface
 rm -rf plugin
 rm -rf install
-rm -rf config.yaml
-rm -rf config.yaml.original
 rm -rf version.yaml
 rm -rf jre
-rm -rf docker-entrypoint.sh
