@@ -32,7 +32,6 @@ cp -r ../downloader downloader
 cp -r ../plugin-interface plugin-interface
 cp -r ../plugin plugin
 cp -r ../install ./
-cp -r config.yaml ./
 cp -r ../version.yaml ./
 
 ## building the docker image
