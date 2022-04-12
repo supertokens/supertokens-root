@@ -1,3 +1,4 @@
+#!/bin/bash
 result=${PWD##*/}          # to assign to a variable
 
 folder=`printf '%s\n' "${PWD##*/}"`
