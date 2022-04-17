@@ -31,13 +31,15 @@ fi
 
 if [[ $wait = "true" ]]
 then
+  echo "Test environment started! Leave this script running while running tests."
 	# we wait for user to end the session
 	while [[ true ]]
 	do
-		echo "Running test env"
+		echo "Test environment running..."
 	    sleep 2
 	done
 else
+  echo "Running all tests..."
 	# ../ because the tests are run relative to the project's folder.
 	./gradlew test
 fi
