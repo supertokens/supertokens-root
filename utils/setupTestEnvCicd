@@ -157,3 +157,4 @@ mv version_temp.yaml version.yaml
 mkdir temp
 cp config.yaml temp/config.yaml
 rm config.yaml
+touch .testEnvRunning
