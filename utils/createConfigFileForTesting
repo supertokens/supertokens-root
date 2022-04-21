@@ -1,4 +1,4 @@
-
+#!/bin/bash
 > config_temp.yaml
 
 prefix=`./utils/project-prefix`
