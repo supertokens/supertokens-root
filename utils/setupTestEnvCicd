@@ -3,7 +3,7 @@
 # setup jars, dependencies and version
 
 ./gradlew clean
-> version_temp.yaml
+touch version_temp.yaml
 
 prefix=`./utils/project-prefix`
 
