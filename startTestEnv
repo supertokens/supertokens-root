@@ -2,13 +2,13 @@
 
 function cleanup {
   if [[ $cicd = true ]]; then
-    ./utils/cleanTestEnvCicd
+    ./utils/cleanTestEnv --cicd
   else
-    ./utils/cleanTestEnvLocal
+    ./utils/cleanTestEnv --local
   fi
 }
 
-usage="Usage: startTestingEnv [--help] [--wait] [--silent] [--cicd] [--force]"
+usage="Usage: startTestEnv [--help] [--wait] [--silent] [--cicd] [--force]"
 wait=false
 silent=false
 cicd=false
@@ -36,9 +36,9 @@ trap cleanup EXIT
 
 [[ $silent = false ]] && echo "Setting up testing environment..."
 if [[ $cicd = true ]]; then
-  ./utils/setupTestEnvCicd
+  ./utils/setupTestEnv --cicd
 else
-  ./utils/setupTestEnvLocal
+  ./utils/setupTestEnv --local
 fi
 
 

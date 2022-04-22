@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function cleanup {
-    kill %1 > /dev/null # Send exit to startTestingEnv
+    kill %1 > /dev/null # Send exit to startTestEnv
 }
 
 usage="Usage: runCore [--help] [--silent] [--cicd] [--force]"
@@ -24,15 +24,15 @@ done
 if [[ $force = true && -f .testEnvRunning ]]; then
   [[ $silent = false ]] && echo "Removing previous testing environment..."
   if [[ $cicd = true ]]; then
-    ./utils/cleanTestEnvCicd
+    ./utils/cleanTestEnv --cicd
   else
-    ./utils/cleanTestEnvLocal
+    ./utils/cleanTestEnv --local
   fi
 fi
 
 trap cleanup EXIT
 
-./startTestingEnv --wait --silent & # Run in background
+./startTestEnv --wait --silent & # Run in background
 
 [[ $silent = false ]] && echo "Waiting for testing environment to start..."
 until [[ -f .testEnvRunning ]]

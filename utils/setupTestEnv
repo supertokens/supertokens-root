@@ -1,4 +1,20 @@
 #!/bin/bash
+
+usage="Usage: setupTestEnvLocal [--help] [ [--cicd] | [--local] ]"
+cicd=false
+
+# Based on https://stackoverflow.com/a/33826763/11827673
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    -h|--help)   echo "$usage"; exit ;;
+    -c|--cicd)   cicd=true   ;;
+    -l|--local)  cicd=false  ;;
+    *) echo "Unknown parameter passed: $1"; echo "$usage"; exit 1 ;;
+  esac
+  shift
+done
+
+# load version and jars
 # setup jars, dependencies and version
 
 ./gradlew clean
@@ -43,7 +59,9 @@ do
  		    (cd $dir_name/downloader/ && ./runBuild noJarFolderChange)
  			mkdir core > /dev/null 2>&1
  			cp $dir_name/build/libs/* core
- 			cp $dir_name/build/dependencies/* core > /dev/null 2>&1
+ 			if [[ $cicd = false ]]; then
+ 			  cp $dir_name/build/dependencies/* core > /dev/null 2>&1
+ 			fi
  			
  			# add to version_temp.yaml
  			core_version=`cat $dir_name/build.gradle | grep -e "version =" -e "version="`
@@ -58,10 +76,24 @@ do
 				done
 			done <<< "$core_version"
 			echo "core_version: $core_version" >> version_temp.yaml
-			
+
+            if [[ $cicd = true ]]; then
+              curl -X GET \
+                  "https://api.supertokens.io/core/dependency/jars?version=$core_version&planType=FREE&mode=DEV&withSource=false" \
+                  -H 'api-version: 0' | jq '.links' | jq -c '.[]' | while read i; do \
+                  wget -P core/ `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
+            fi
             mkdir cli > /dev/null 2>&1
             cp $dir_name/cli/build/libs/* cli
-            cp $dir_name/cli/build/dependencies/* cli > /dev/null 2>&1
+            if [[ $cicd = true ]]; then
+              curl -X GET \
+                  "https://api.supertokens.io/cli/dependency/jars?version=$core_version&planType=FREE&mode=DEV
+                  &withSource=false" \
+                  -H 'api-version: 0' | jq '.links' | jq -c '.[]' | while read i; do \
+                  wget -P cli/ `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
+            else
+              cp $dir_name/cli/build/dependencies/* cli > /dev/null 2>&1
+            fi
 
             mkdir downloader > /dev/null 2>&1
             cp $dir_name/downloader/build/libs/* downloader
@@ -74,7 +106,9 @@ do
  		then
  			mkdir plugin-interface > /dev/null 2>&1
  			cp $dir_name/build/libs/* plugin-interface
- 			cp $dir_name/build/dependencies/* plugin-interface > /dev/null 2>&1
+ 			if [[ $cicd = false ]]; then
+ 			  cp $dir_name/build/dependencies/* plugin-interface > /dev/null 2>&1
+      fi
  			
  			# add to version_temp.yaml
  			pi_version=`cat $dir_name/build.gradle | grep -e "version =" -e "version="`
@@ -90,11 +124,20 @@ do
 			done <<< "$pi_version"
 			echo "plugin_interface_version: $pi_version" >> version_temp.yaml
 			
+			if [[ $cicd = true ]]; then
+			  curl -X GET \
+          "https://api.supertokens.io/plugin-interface/dependency/jars?version=$pi_version&planType=FREE&mode=DEV&withSource=false" \
+          -H 'api-version: 0' | jq '.links' | jq -c '.[]' | while read i; do \
+          wget -P plugin-interface/ `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
+      fi
+			
  		elif [[ $repo_name != "sqlite-plugin" ]]
  		then
  			mkdir plugin > /dev/null 2>&1
  			cp $dir_name/build/libs/* plugin
- 			cp $dir_name/build/dependencies/* plugin > /dev/null 2>&1
+ 			if [[ $cicd = false ]]; then
+ 			  cp $dir_name/build/dependencies/* plugin > /dev/null 2>&1
+ 			fi
  			
  			
  			# add to version_temp.yaml
@@ -122,6 +165,12 @@ do
 			done <<< "$p_name"
 			echo "plugin_version: $p_version" >> version_temp.yaml
 			echo "plugin_name: $p_name" >> version_temp.yaml
+			if [[ $cicd = true ]]; then
+			  curl -X GET \
+          "https://api.supertokens.io/plugin/dependency/jars?version=$p_version&name=$p_name&planType=FREE&mode=DEV&withSource=false" \
+          -H 'api-version: 0' | jq '.links' | jq -c '.[]' | while read i; do \
+          wget -P plugin/ `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
+      fi
 		else
 		    mkdir plugin > /dev/null 2>&1
  		fi

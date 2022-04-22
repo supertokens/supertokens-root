@@ -1,0 +1,27 @@
+#!/bin/bash
+
+usage="Usage: cleanTestEnv [--help] [ [--cicd] | [--local] ]"
+cicd=false
+
+# Based on https://stackoverflow.com/a/33826763/11827673
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    -h|--help)   echo "$usage"; exit ;;
+    -c|--cicd)   cicd=true   ;;
+    -l|--local)  cicd=false  ;;
+    *) echo "Unknown parameter passed: $1"; echo "$usage"; exit 1 ;;
+  esac
+  shift
+done
+
+rm -rf core
+rm -rf plugin-interface
+rm -rf plugin
+rm -rf cli
+rm -rf downloader
+rm version.yaml
+rm -rf temp
+rm install
+rm install.bat
+rm LICENSE.md
+rm .testEnvRunning
