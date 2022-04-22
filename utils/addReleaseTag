@@ -1,3 +1,4 @@
+#!/bin/bash
 # working directory is inside supertokens-*/. Expects a releasePassword file to be ../
 # ./addReleaseTag [--forced]
 # get version------------

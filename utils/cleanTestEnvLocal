@@ -1,3 +1,4 @@
+#!/bin/bash
 rm -rf core
 rm -rf plugin-interface
 rm -rf plugin
@@ -8,3 +9,4 @@ rm -rf temp
 rm install
 rm install.bat
 rm LICENSE.md
+rm .testEnvRunning

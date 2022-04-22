@@ -1,5 +1,5 @@
-
-> config_temp.yaml
+#!/bin/bash
+touch config_temp.yaml
 
 prefix=`./utils/project-prefix`
 

@@ -1,7 +1,8 @@
+#!/bin/bash
 # setup jars, dependencies and version
 
 ./gradlew clean
-> version_temp.yaml
+touch version_temp.yaml
 
 prefix=`./utils/project-prefix`
 
@@ -139,3 +140,4 @@ mv version_temp.yaml version.yaml
 mkdir temp
 cp config.yaml temp/config.yaml
 rm config.yaml
+touch .testEnvRunning
