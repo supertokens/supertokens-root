@@ -97,6 +97,9 @@ LICENSE.md
 .idea/**/uiDesigner.xml
 .idea/**/dbnavigator.xml
 
+# Other files
+.idea/runConfigurations.xml
+
 # Gradle
 .idea/**/gradle.xml
 .idea/**/libraries
