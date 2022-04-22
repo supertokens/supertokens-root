@@ -27,7 +27,7 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
-if [[ $force = true ]]; then
+if [[ $force = true && -f .testEnvRunning ]]; then
   [[ $silent = false ]] && echo "Removing previous testing environment..."
   cleanup
 fi
