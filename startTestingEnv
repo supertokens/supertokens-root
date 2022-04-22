@@ -1,45 +1,55 @@
 #!/bin/bash
 
 function cleanup {
-	if [[ $1 = "--cicd" ]]
-	then
-		./utils/cleanTestEnvCicd
-	else
-		./utils/cleanTestEnvLocal
-	fi 
+  if [[ $cicd = true ]]; then
+    ./utils/cleanTestEnvCicd
+  else
+    ./utils/cleanTestEnvLocal
+  fi
 }
+
+usage="Usage: startTestingEnv [--help] [--wait] [--silent] [--cicd] [--force]"
+wait=false
+silent=false
+cicd=false
+force=false
+
+# Based on https://stackoverflow.com/a/33826763/11827673
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    -h|--help)   echo "$usage"; exit ;;
+    -w|--wait)   wait=true   ;;
+    -s|--silent) silent=true ;;
+    -c|--cicd)   cicd=true   ;;
+    -f|--force)  force=true  ;;
+    *) echo "Unknown parameter passed: $1"; echo "$usage"; exit 1 ;;
+  esac
+  shift
+done
+
+if [[ $force = true ]]; then
+  [[ $silent = false ]] && echo "Removing previous testing environment..."
+  cleanup
+fi
 
 trap cleanup EXIT
 
-wait=false
-
-if [[ $1 = "--cicd" ]]
-then
-	if [[ $2 = "--wait" ]]
-	then
-		wait=true
-	fi
-	./utils/setupTestEnvCicd
+[[ $silent = false ]] && echo "Setting up testing environment..."
+if [[ $cicd = true ]]; then
+  ./utils/setupTestEnvCicd
 else
-	if [[ $1 = "--wait" ]]
-	then
-		wait=true
-	fi
-	./utils/setupTestEnvLocal	
+  ./utils/setupTestEnvLocal
 fi
 
 
-if [[ $wait = "true" ]]
-then
-  echo "Test environment started! Leave this script running while running tests."
-	# we wait for user to end the session
-	while [[ true ]]
-	do
-		echo "Test environment running..."
-	    sleep 2
-	done
+if [[ $wait = true ]]; then
+  [[ $silent = false ]] && echo "Test environment started! Leave this script running while running tests."
+  # Wait for the user to end the session
+  while true; do
+    sleep 1
+  done
 else
-  echo "Running all tests..."
-	# ../ because the tests are run relative to the project's folder.
-	./gradlew test
+  [[ $silent = false ]] && echo "Running all tests..."
+  # Tests are run relative to the project's folder
+  ./gradlew test
 fi
