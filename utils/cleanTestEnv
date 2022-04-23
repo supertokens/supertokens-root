@@ -1,7 +1,8 @@
 #!/bin/bash
 
-usage="Usage: cleanTestEnv [--help] [ [--cicd] | [--local] ]"
+usage="Usage: cleanTestEnv [--help] [ [--cicd] | [--local] ] [--silent]"
 cicd=false
+silent=false
 
 # Based on https://stackoverflow.com/a/33826763/11827673
 while [[ "$#" -gt 0 ]]; do
@@ -9,6 +10,7 @@ while [[ "$#" -gt 0 ]]; do
     -h|--help)   echo "$usage"; exit ;;
     -c|--cicd)   cicd=true   ;;
     -l|--local)  cicd=false  ;;
+    -s|--silent) silent=true ;;
     *) echo "Unknown parameter passed: $1"; echo "$usage"; exit 1 ;;
   esac
   shift
@@ -25,3 +27,4 @@ rm install
 rm install.bat
 rm LICENSE.md
 rm .testEnvRunning
+[[ $silent = false ]] && echo "Testing environment destroyed."
