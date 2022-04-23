@@ -1,0 +1,5 @@
+#!/bin/bash
+RED="\033[0;31m"
+NC="\033[0m"
+printf "${RED}WARNING: setupTestEnvLocal is DEPRECATED! Use setupTestEnv instead.${NC}\n" >&2
+./utils/setupTestEnv --local "$@" # Pass all arguments
