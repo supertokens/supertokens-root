@@ -68,6 +68,7 @@ releasePassword
 install
 install.bat
 LICENSE.md
+.testEnvRunning
 
 
 

@@ -1,4 +1,8 @@
 #!/bin/bash
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
 # get current version----------
 
 version=`cat build.gradle | grep -e "version =" -e "version="`
@@ -27,29 +31,30 @@ branch_name=${branch_name##refs/heads/}
 
 if [ $branch_name == "master" ]
 then
-	YELLOW='\033[1;33m'
-	NC='\033[0m' # No Color
-	printf "${YELLOW}committing to MASTER${NC}\n"
+	printf "${YELLOW}Committing to MASTER${NC}\n"
 elif [[ $version == $branch_name* ]]
 then
 	continue=1
 elif ! [[ $branch_name =~ ^[0-9].[0-9]$ ]]
 then
-	YELLOW='\033[1;33m'
-	NC='\033[0m' # No Color
-    printf "${YELLOW}Not committing to master or version branches${NC}\n"
+  printf "${YELLOW}Not committing to master or version branches${NC}\n"
 else
-	RED='\033[0;31m'
-	NC='\033[0m' # No Color
-	printf "${RED}Pushing to wrong branch. Stopping commit${NC}\n"
-	exit 1	
+  printf "${RED}Pushing to wrong branch. Stopping commit${NC}\n"
+	exit 1
+fi
+
+(cd ../ && ./gradlew spotlessCheck < /dev/null)
+if [[ $? -ne 0 ]]
+then
+  printf "${RED}Linting FAILED, please run './gradlew spotlessApply' in supertokens-root or the 'Lint' run configuration in IntelliJ IDEA${NC}\n"
+	exit 1
 fi
 
 ./runBuild
 
 if [[ $? -ne 0 ]]
 then
-    echo "Failed to build"
+    printf "${RED}Build FAILED${NC}"
 	exit 1
 fi
 
@@ -57,10 +62,3 @@ fi
 # We also have to maintain this order since in some projects ./**/jar/ does not exist
 git restore "./**/jar/*" > /dev/null 2>&1
 git restore "./jar/*" > /dev/null 2>&1
-
-(cd ../ && ./gradlew spotlessCheck < /dev/null)
-if [[ $? -ne 0 ]]
-then
-    echo "Linting failed, please run './gradlew spotlessApply' in supertokens-root"
-	exit 1
-fi

@@ -1,12 +1,5 @@
 #!/bin/bash
-rm -rf core
-rm -rf plugin-interface
-rm -rf plugin
-rm -rf cli
-rm -rf downloader
-rm version.yaml
-rm -rf temp
-rm install
-rm install.bat
-rm LICENSE.md
-rm .testEnvRunning
+RED="\033[0;31m"
+NC="\033[0m"
+printf "${RED}WARNING: cleanTestEnvLocal is DEPRECATED! Use cleanTestEnv instead.${NC}\n" >&2
+./utils/cleanTestEnv --local "$@" # Pass all arguments

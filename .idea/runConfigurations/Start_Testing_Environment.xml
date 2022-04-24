@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Start Testing Environment" type="ShConfigurationType" singleton="false">
-    <option name="SCRIPT_TEXT" value="./startTestingEnv --wait" />
+    <option name="SCRIPT_TEXT" value="./startTestEnv --wait" />
     <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
     <option name="SCRIPT_PATH" value="" />
     <option name="SCRIPT_OPTIONS" value="" />
