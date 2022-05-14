@@ -1,47 +1,11 @@
 #!/bin/bash
 
-function cleanup {
-    kill %1 > /dev/null # Send exit to startTestEnv
-}
-
-usage="Usage: runCore [--help] [--silent] [--cicd] [--force]"
-silent=false
-cicd=false
-force=false
-
-# Based on https://stackoverflow.com/a/33826763/11827673
-while [[ "$#" -gt 0 ]]; do
-  case $1 in
-    -h|--help)   echo "$usage"; exit ;;
-    -s|--silent) silent=true ;;
-    -c|--cicd)   cicd=true   ;;
-    -f|--force)  force=true  ;;
-    *) echo "Unknown parameter passed: $1"; echo "$usage"; exit 1 ;;
-  esac
-  shift
-done
-
-if [[ $force = true && -f .testEnvRunning ]]; then
-  [[ $silent = false ]] && echo "Removing previous testing environment..."
-  if [[ $cicd = true ]]; then
-    ./utils/cleanTestEnv --cicd
-  else
-    ./utils/cleanTestEnv --local
-  fi
+if [ ! -f .testEnvRunning ]
+then
+    echo -e "\x1b[31m\nPlease execute \x1b[1;3m./startTestEnv --wait \x1b[0m\x1b[31mand run this script again\x1b[0m\n"
+    exit 1;
 fi
-
-trap cleanup EXIT
-
-./startTestEnv --wait --silent & # Run in background
-
-[[ $silent = false ]] && echo "Waiting for testing environment to start..."
-until [[ -f .testEnvRunning ]]
-do
-     sleep 1
-done
-[[ $silent = false ]] && echo "Test environment started!"
 cp ./temp/config.yaml .
-[[ $silent = false ]] && echo "Starting core..."
 
 classpath="./core/*:./plugin-interface/*"
 
