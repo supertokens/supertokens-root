@@ -15,4 +15,4 @@ For any queries, or support requests, please email us at team@supertokens.io, or
 Created with :heart: by the folks at SuperTokens.io.
 
 # Contribute
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/from-referrer/)
+[Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/from-referrer/)
