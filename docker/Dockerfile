@@ -1,6 +1,6 @@
 FROM ubuntu:bionic-20200219 as tmp
 RUN mkdir supertokens
-WORKDIR supertokens
+WORKDIR /supertokens
 COPY core core
 COPY cli cli
 COPY downloader downloader
