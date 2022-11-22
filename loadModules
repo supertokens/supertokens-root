@@ -28,6 +28,7 @@ fi
 
 echo "include 'supertokens-core:cli'" >> settings.gradle
 echo "include 'supertokens-core:downloader'" >> settings.gradle
+echo "include 'supertokens-core:ee'" >> settings.gradle
 
 # add new line char at the end in case it's not there for looping
 echo  >> modules.txt
