@@ -7,7 +7,7 @@ then
 fi
 cp ./temp/config.yaml .
 
-classpath="./core/*:./plugin-interface/*"
+classpath="./core/*:./plugin-interface/*:./ee/*"
 
 if which cygpath > /dev/null; then # Convert path to Windows-style if using Git Bash
   classpath="$(cygpath -C ANSI -w -p "${classpath}")"
