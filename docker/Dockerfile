@@ -4,6 +4,7 @@ WORKDIR supertokens
 COPY core core
 COPY cli cli
 COPY downloader downloader
+COPY ee ee
 COPY plugin-interface plugin-interface
 COPY plugin plugin
 COPY install ./

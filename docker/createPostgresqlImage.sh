@@ -29,6 +29,7 @@ rm -rf __MACOSX
 cp -r ../core core
 cp -r ../cli cli
 cp -r ../downloader downloader
+cp -r ../ee ee
 cp -r ../plugin-interface plugin-interface
 cp -r ../plugin plugin
 cp -r ../install ./
@@ -40,6 +41,7 @@ docker build -t supertokens-postgresql-testing .
 ## removing all the files and folders previously copied or extracted
 rm -rf core
 rm -rf cli
+rm -rf ee
 rm -rf downloader
 rm -rf plugin-interface
 rm -rf plugin
