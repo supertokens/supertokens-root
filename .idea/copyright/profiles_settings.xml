@@ -1,3 +1,7 @@
 <component name="CopyrightManager">
-  <settings default="CommunityCopyright" />
+  <settings default="CommunityCopyright">
+    <module2copyright>
+      <element module="EEFolder" copyright="EEFolder" />
+    </module2copyright>
+  </settings>
 </component>
