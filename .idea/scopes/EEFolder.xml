@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="EEFolder" pattern="file[supertokens-root.supertokens-core.ee*]:*//*" />
+</component>

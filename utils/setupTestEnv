@@ -57,6 +57,7 @@ do
  		then
  		    (cd $dir_name/cli/ && ./runBuild noJarFolderChange)
  		    (cd $dir_name/downloader/ && ./runBuild noJarFolderChange)
+ 		    (cd $dir_name/ee/ && ./runBuild noJarFolderChange)
  			mkdir core > /dev/null 2>&1
  			cp $dir_name/build/libs/* core
  			if [[ $cicd = false ]]; then
@@ -97,6 +98,9 @@ do
 
             mkdir downloader > /dev/null 2>&1
             cp $dir_name/downloader/build/libs/* downloader
+
+            mkdir ee > /dev/null 2>&1
+            cp $dir_name/ee/build/libs/* ee
 
             cp $dir_name/install install
             cp $dir_name/install.bat install.bat

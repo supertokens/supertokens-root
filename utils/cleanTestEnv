@@ -21,6 +21,7 @@ rm -rf plugin-interface
 rm -rf plugin
 rm -rf cli
 rm -rf downloader
+rm -rf ee
 rm version.yaml
 rm -rf temp
 rm install

@@ -53,6 +53,7 @@ ent-*
 /plugin/
 /cli/
 /downloader/
+/ee/
 /config.yaml
 /logs
 /version.yaml
