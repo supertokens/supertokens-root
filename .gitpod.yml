@@ -8,10 +8,10 @@ tasks:
 
 
 ports:
-   - port: 3306
-     onOpen: ignore
-   - port: 5432
-     onOpen: ignore
+  - port: 3306
+    onOpen: ignore
+  - port: 5432
+    onOpen: ignore
   
 
 
