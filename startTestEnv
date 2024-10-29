@@ -58,7 +58,7 @@ else
     circleci tests run --command=">classnames.txt xargs echo" --verbose --split-by=timings --timings-type=classname
 
     #if this is a re-run and it is a parallel run that does not have tests to run, halt execution of this parallel run
-    [ -s classnames.txt ] || (circleci-agent step halt && exit 0)
+    [ -s classnames.txt ] || { circleci-agent step halt && exit 0; }
 
     GRADLE_ARGS=$(cat classnames.txt | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
     echo "Prepared arguments for Gradle: $GRADLE_ARGS"
