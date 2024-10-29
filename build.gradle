@@ -45,3 +45,13 @@ spotless {
         // licenseHeader '/* (C)$YEAR */'
     }
 }
+
+gradle.projectsEvaluated {
+    subprojects {
+        test {
+            filter {
+                setFailOnNoMatchingTests(false)
+            }
+        }
+    }
+}
