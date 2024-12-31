@@ -8,6 +8,10 @@
 
 This module is for development purposes of SuperTokens Community version.
 
+## Setup
+* Uses Gradle 7.3. So requires Java <= 17. See https://docs.gradle.org/current/userguide/compatibility.html
+* First time run `./loadModules`
+
 ## Contact us
 
 For any queries, or support requests, please email us at team@supertokens.io, or join
