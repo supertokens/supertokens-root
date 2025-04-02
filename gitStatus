@@ -1,6 +1,8 @@
 #!/bin/bash
 
-prefix=`./utils/project-prefix`
+utils_path="./utils/core"
+
+prefix=`$utils_path/project-prefix`
 
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
@@ -9,10 +11,10 @@ git status
 
 
 # add new line char at the end in case it's not there for looping
-echo  >> modules.txt
+echo  >> $utils_path/modules.txt
 
 # looping
-cat modules.txt | while read line
+cat $utils_path/modules.txt | while read line
 do
 	if [[ ! -z "$line" ]] && [[ $line != //* ]]
 	then
@@ -39,4 +41,4 @@ done
 
 
 # remove new line char from end for next use of this script
-printf %s "$(< modules.txt)" > modules.txt
+printf %s "$(< $utils_path/modules.txt)" > $utils_path/modules.txt

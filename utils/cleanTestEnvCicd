@@ -1,5 +1,0 @@
-#!/bin/bash
-RED="\033[0;31m"
-NC="\033[0m"
-printf "${RED}WARNING: cleanTestEnvCicd is DEPRECATED! Use cleanTestEnv --cicd instead.${NC}\n" >&2
-./utils/cleanTestEnv --cicd "$@" # Pass all arguments

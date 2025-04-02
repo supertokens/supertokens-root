@@ -1,13 +1,17 @@
 #!/bin/bash
-touch config_temp.yaml
 
-prefix=`./utils/project-prefix`
+utils_path="./utils/core"
+packages_path="./packages"
+prefix=`$utils_path/project-prefix`
+tmp_path=".tmp/supertokens-core"
+touch $tmp_path/config_temp.yaml
+
 
 # add new line char at the end in case it's not there for looping
-echo  >> modules.txt
+echo  >> $utils_path/modules.txt
 
 # looping
-cat modules.txt | while read line
+cat $utils_path/modules.txt | while read line
 do
 	if [[ ! -z "$line" ]] && [[ $line != //* ]]
 	then
@@ -28,21 +32,21 @@ do
  		
  		if [[ $dir_name = *"-core" ]]
  		then
- 			cat $dir_name/devConfig.yaml >> config_temp.yaml
- 			echo "" >> config_temp.yaml
- 			echo "" >> config_temp.yaml
+ 			cat $packages_path/$dir_name/devConfig.yaml >> $tmp_path/config_temp.yaml
+ 			echo "" >> $tmp_path/config_temp.yaml
+ 			echo "" >> $tmp_path/config_temp.yaml
  		elif [[ $dir_name = *"-plugin-interface" ]]
  		then
  			continue=1
  		elif [[ $repo_name != "sqlite-plugin" ]]
         then
- 			cat $dir_name/devConfig.yaml >> config_temp.yaml
- 			`echo ""` >> config_temp.yaml
+ 			cat $packages_path/$dir_name/devConfig.yaml >> $tmp_path/config_temp.yaml
+ 			`echo ""` >> $tmp_path/config_temp.yaml
  		fi
    	fi
 done
 
 # remove new line char from end for next use of this script
-printf %s "$(< modules.txt)" > modules.txt
+printf %s "$(< $utils_path/modules.txt)" > $utils_path/modules.txt
 
-mv config_temp.yaml config.yaml
+mv $tmp_path/config_temp.yaml $tmp_path/config.yaml

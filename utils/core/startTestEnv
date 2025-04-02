@@ -1,10 +1,12 @@
 #!/bin/bash
 
+utils_path="./utils/core"
+
 function cleanup {
   if [[ $cicd = true ]]; then
-    ./utils/cleanTestEnv --cicd
+    $utils_path/cleanTestEnv --cicd
   else
-    ./utils/cleanTestEnv --local
+    $utils_path/cleanTestEnv --local
   fi
 }
 
@@ -36,9 +38,9 @@ trap cleanup EXIT
 
 [[ $silent = false ]] && echo "Setting up testing environment..."
 if [[ $cicd = true ]]; then
-  ./utils/setupTestEnv --cicd
+  $utils_path/setupTestEnv --cicd
 else
-  ./utils/setupTestEnv --local
+  $utils_path/setupTestEnv --local
 fi
 
 

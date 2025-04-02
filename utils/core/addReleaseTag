@@ -22,7 +22,7 @@ branch_name=${branch_name##refs/heads/}
 
 git fetch --prune --prune-tags
 
-password=`cat ../apiPassword`
+password=`cat ../../apiPassword`
 
 # get current package type
 if [[ `pwd` == *-core ]]
@@ -139,7 +139,7 @@ else
 	exit 1
 fi
 
-releasePassword=`cat ../releasePassword`
+releasePassword=`cat ../../releasePassword`
 
 # now we call the patch API to make it release mode
 if [[ $packageType == "core" ]]

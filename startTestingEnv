@@ -1,5 +1,0 @@
-#!/bin/bash
-RED="\033[0;31m"
-NC="\033[0m"
-printf "${RED}WARNING: startTestingEnv is DEPRECATED! Use startTestEnv instead.${NC}\n" >&2
-./startTestEnv "$@" # Pass all arguments

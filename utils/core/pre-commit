@@ -43,7 +43,7 @@ else
 	exit 1
 fi
 
-(cd ../ && ./gradlew editorconfigCheck < /dev/null)
+(cd ../../ && ./gradlew editorconfigCheck < /dev/null)
 if [[ $? -ne 0 ]]
 then
   printf "${RED}Linting FAILED, please run './gradlew editorconfigFormat' in supertokens-root or the 'Lint' run configuration in IntelliJ IDEA${NC}\n"

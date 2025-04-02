@@ -48,6 +48,7 @@ ent-*
 .DS_Store
 
 #testing while in dev
+/packages
 /core/
 /plugin-interface/
 /plugin/
