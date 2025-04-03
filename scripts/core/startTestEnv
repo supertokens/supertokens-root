@@ -1,6 +1,6 @@
 #!/bin/bash
 
-utils_path="./utils/core"
+utils_path="./scripts/core"
 
 function cleanup {
   if [[ $cicd = true ]]; then

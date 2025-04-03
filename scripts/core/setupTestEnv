@@ -4,7 +4,7 @@ usage="Usage: setupTestEnvLocal [--help] [ [--cicd] | [--local] ]"
 cicd=false
 packages_path="./packages"
 tmp_path=".tmp/supertokens-core"
-utils_path="./utils/core"
+utils_path="./scripts/core"
 # Based on https://stackoverflow.com/a/33826763/11827673
 while [[ "$#" -gt 0 ]]; do
   case $1 in
@@ -19,14 +19,19 @@ done
 # load version and jars
 # setup jars, dependencies and version
 
-./gradlew clean
+(cd $packages_path && ./gradlew clean)
 
+echo "--------------------------------"
+pwd
+echo "--------------------------------"
+mkdir -p $tmp_path
 touch $tmp_path/version_temp.yaml
-
 prefix=`$utils_path/project-prefix`
 
 # add new line char at the end in case it's not there for looping
 echo  >> $utils_path/modules.txt
+
+
 
 # looping
 cat $utils_path/modules.txt | while read line
@@ -46,12 +51,20 @@ do
  		
  		dir_name=$prefix-$repo_name
 
+		# copy runBuild before building
+		if [[ $repo_name = "core" ]]
+		then
+			cp $utils_path/assets/runBuild-cli $packages_path/$dir_name/cli/runBuild
+			cp $utils_path/assets/runBuild-downloader $packages_path/$dir_name/downloader/runBuild
+			cp $utils_path/assets/runBuild-ee $packages_path/$dir_name/ee/runBuild
+		fi
+
  		if [[ $repo_name != "sqlite-plugin" ]]
         then
             # build
             echo ""
             echo "Building $dir_name..."
-			cp $utils_path/runBuild-$dir_name $packages_path/$dir_name/runBuild
+			cp $utils_path/assets/runBuild-$dir_name $packages_path/$dir_name/runBuild
             (cd $packages_path/$dir_name/ && ./runBuild noJarFolderChange)
  		fi
  		
@@ -59,15 +72,6 @@ do
 
  		if [[ $dir_name = *"-core" ]]
  		then
-			cp $utils_path/runBuild-cli $packages_path/$dir_name/cli/runBuild
- 		    (cd $packages_path/$dir_name/cli/ && ./runBuild noJarFolderChange)
-
-			cp $utils_path/runBuild-downloader $packages_path/$dir_name/downloader/runBuild
- 		    (cd $packages_path/$dir_name/downloader/ && ./runBuild noJarFolderChange)
-
- 		    (cd $packages_path/$dir_name/ee/ && ./runBuild noJarFolderChange)
-			cp $utils_path/runBuild-ee $packages_path/$dir_name/ee/runBuild
-
  			mkdir $tmp_path/core > /dev/null 2>&1
  			cp $packages_path/$dir_name/build/libs/* $tmp_path/core
  			if [[ $cicd = false ]]; then
@@ -199,4 +203,5 @@ mv $tmp_path/version_temp.yaml $tmp_path/version.yaml
 
 # fetch default license key and config
 $utils_path/createConfigFileForTesting
+echo "set testEnvRunning"
 touch $tmp_path/.testEnvRunning

@@ -1,13 +1,13 @@
 #!/bin/bash
 
-utils_path="./utils/core"
+utils_path="./scripts/core"
 packages_path="./packages"
 
 mkdir $packages_path > /dev/null 2>&1
 
 # ignore changes to these two files
 git update-index --skip-worktree $utils_path/modules.txt
-git update-index --skip-worktree settings.gradle
+git update-index --skip-worktree $utils_path/assets/settings.gradle
 git update-index --skip-worktree .idea/runConfigurations/CLI_Main.xml
 git update-index --skip-worktree .idea/compiler.xml
 git update-index --skip-worktree .idea/vcs.xml
@@ -27,12 +27,15 @@ if [ $prefix == "supertokens" ]; then
 	fi
 fi
 
-# clear settings.gradle
-> settings.gradle
+cp -r $utils_path/assets/* $packages_path
 
-echo "include '$packages_path/supertokens-core:cli'" >> settings.gradle
-echo "include '$packages_path/supertokens-core:downloader'" >> settings.gradle
-echo "include '$packages_path/supertokens-core:ee'" >> settings.gradle
+
+# clear settings.gradle
+> $packages_path/settings.gradle
+
+echo "include 'supertokens-core:cli'" >> $packages_path/settings.gradle
+echo "include 'supertokens-core:downloader'" >> $packages_path/settings.gradle
+echo "include 'supertokens-core:ee'" >> $packages_path/settings.gradle
 
 # add new line char at the end in case it's not there for looping
 echo  >> $utils_path/modules.txt
@@ -65,18 +68,18 @@ do
 
  		if [[ $repo_name != "sqlite-plugin" ]]
  		then
-      (cd $packages_path && git clone --branch $branch $url$user_name/$prefix-$repo_name.git)
+			(cd $packages_path && git clone --branch $branch $url$user_name/$prefix-$repo_name.git)
 
-      cp $utils_path/pre-commit $packages_path/$prefix-$repo_name/.git/hooks/
+			cp $utils_path/pre-commit $packages_path/$prefix-$repo_name/.git/hooks/
 
-      cp $utils_path/addDevTag $packages_path/$prefix-$repo_name/addDevTag
-      cp $utils_path/addReleaseTag $packages_path/$prefix-$repo_name/addReleaseTag
+			cp $utils_path/addDevTag $packages_path/$prefix-$repo_name/addDevTag
+			cp $utils_path/addReleaseTag $packages_path/$prefix-$repo_name/addReleaseTag
 
-      echo "include '$packages_path/$prefix-$repo_name'" >> settings.gradle
-    fi
-
-  fi
+			echo "include '$prefix-$repo_name'" >> $packages_path/settings.gradle
+		fi
+  	fi
 done
+
 
 
 # remove new line char from end for next use of this script

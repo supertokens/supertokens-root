@@ -1,4 +1,4 @@
-utils_path="./utils/core"
+utils_path="./scripts/core"
 
 exitIfNeeded () {
   if [ $? -ne 0 ]
@@ -8,15 +8,20 @@ exitIfNeeded () {
 }
 
 prefix=`(cd ../../ && $utils_path/project-prefix)`
-(cd ../../ && ./gradlew :$prefix-core:clean < /dev/null)
+echo "--------------------------------"	
+echo "prefix: $prefix"
+echo "--------------------------------"
+
+(cd ../ && ./gradlew :$prefix-core:clean < /dev/null)
+
 
 exitIfNeeded
 
-(cd ../../ && ./gradlew :$prefix-core:build -x test < /dev/null)
+(cd ../ && ./gradlew :$prefix-core:build -x test < /dev/null)
 
 exitIfNeeded
 
-(cd ../../ && ./gradlew :$prefix-core:copyJars < /dev/null)
+(cd ../ && ./gradlew :$prefix-core:copyJars < /dev/null)
 
 exitIfNeeded
 

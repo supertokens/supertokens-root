@@ -1,6 +1,6 @@
 #!/bin/bash
 
-utils_path="./utils/core"
+utils_path="./scripts/core"
 packages_path="./packages"
 prefix=`$utils_path/project-prefix`
 tmp_path=".tmp/supertokens-core"

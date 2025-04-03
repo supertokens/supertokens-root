@@ -4,7 +4,7 @@ tmp_path=".tmp/supertokens-core"
 
 if [ ! -f $tmp_path/.testEnvRunning ]
 then
-    echo -e "\x1b[31m\nPlease execute \x1b[1;3m./utils/core/startTestEnv --wait \x1b[0m\x1b[31mand run this script again\x1b[0m\n"
+    echo -e "\x1b[31m\nPlease execute \x1b[1;3m./scripts/core/startTestEnv --wait \x1b[0m\x1b[31mand run this script again\x1b[0m\n"
     exit 1;
 fi
 
