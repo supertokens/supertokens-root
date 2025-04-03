@@ -70,10 +70,9 @@ do
  		then
 			(cd $packages_path && git clone --branch $branch $url$user_name/$prefix-$repo_name.git)
 
-			cp $utils_path/pre-commit $packages_path/$prefix-$repo_name/.git/hooks/
-
-			cp $utils_path/addDevTag $packages_path/$prefix-$repo_name/addDevTag
-			cp $utils_path/addReleaseTag $packages_path/$prefix-$repo_name/addReleaseTag
+			cp $utils_path/assets/pre-commit $packages_path/$prefix-$repo_name/.git/hooks/
+			cp $utils_path/assets/addDevTag $packages_path/$prefix-$repo_name/addDevTag
+			cp $utils_path/assets/addReleaseTag $packages_path/$prefix-$repo_name/addReleaseTag
 
 			echo "include '$prefix-$repo_name'" >> $packages_path/settings.gradle
 		fi
