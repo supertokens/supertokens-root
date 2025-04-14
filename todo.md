@@ -3,5 +3,31 @@
 - [x]  Cleanup start scripts and file structure to not pollute root folder
 - [x]  Update docker files for new structure
 - [x]  Move tooling/scrits to separate subfolder per package
-- [ ]  Move pacakges to separate subfolder
-- [ ]  Something
+- [x]  Move pacakges to separate subfolder
+- [x]  Add other packages
+  - [x]  nodesdk
+  - [x]  authreact
+  - [x]  webjs
+  - [x]  python
+  - [ ]  docs
+  - [ ]  nestjs
+  - [ ]  backend-apis
+- [ ]  linking
+  - [ ]  between packages
+- [ ]  Starting/creating example app
+  - [ ]  config script for starting example app
+    - [ ]  config file
+    - [x]  checks:
+      - [x]  runtime permits module
+      - [x]  runtime permits version
+      - [ ]  module permits version
+      - [x]  modules exist when using local
+      - [x]  module correctly uses other module if defined (if api is defined, then client should use same apiPort and apiHost as the api config). should be just a warning
+      - [x]  if branch set, then no src path override allowed
+      - [x]  if no branch set, then src path should be set (if not then assume default for module ?)
+      - [x]  service is should be unique
+    - [ ]  link between packages and app
+  - [x]  have untracked folder for apps
+  - [x]  start all apps/services
+  - [ ]  start script to select app to start from filder
+    - [x]  allow assigning ports automatically

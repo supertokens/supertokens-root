@@ -1,0 +1,58 @@
+{
+  "name": "supertokens-random-app",
+  "template": {
+    "firstFactors": [
+      "emailpassword",
+      "thirdparty"
+    ],
+    "providers": [
+      "google",
+      "github"
+    ]
+  },
+  "strategy": "local",
+  "services": [
+    {
+      "id": "client",
+      "runtime": "node",
+      "runtimeVersion": "20.0.0",
+      "module": "auth-react",
+      "srcPath": "./packages/supertokens-auth-react"
+    },
+    {
+      "id": "api",
+      "runtime": "node",
+      "runtimeVersion": "20.0.0",
+      "module": "node",
+      "srcPath": "./packages/supertokens-node"
+    },
+    {
+      "id": "core1",
+      "runtime": "java",
+      "runtimeVersion": "15.0.1",
+      "module": "core",
+      "srcPath": "./packages/supertokens-core"
+    },
+    {
+      "id": "core2",
+      "runtime": "java",
+      "runtimeVersion": "15.0.1",
+      "module": "core",
+      "srcPath": "./packages/supertokens-core"
+    },
+    {
+      "id": "dashboard",
+      "runtime": "node",
+      "runtimeVersion": "20.0.0",
+      "module": "dashboard",
+      "srcPath": "./packages/dashboard"
+    },
+    {
+      "id": "docs",
+      "runtime": "node",
+      "runtimeVersion": "20.0.0",
+      "module": "docs",
+      "srcPath": "./packages/docs"
+    }
+  ]
+}

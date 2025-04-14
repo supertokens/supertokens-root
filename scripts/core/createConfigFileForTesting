@@ -8,10 +8,10 @@ touch $tmp_path/config_temp.yaml
 
 
 # add new line char at the end in case it's not there for looping
-echo  >> $utils_path/modules.txt
+echo  >> ./modules.txt
 
 # looping
-cat $utils_path/modules.txt | while read line
+cat ./modules.txt | while read line
 do
 	if [[ ! -z "$line" ]] && [[ $line != //* ]]
 	then
@@ -25,6 +25,12 @@ do
           		counter=$(($counter+1))
       		done
  		done <<< "$line"
+
+		# the rest of the modules are handled in loadModules.ts
+		if [[ $repo_name != "sqlite-plugin" ]] && [[ $repo_name != "core" ]] && [[ $repo_name != "plugin-interface" ]]
+		then
+			continue
+		fi
  		
  		dir_name=$prefix-$repo_name
  		
@@ -47,6 +53,6 @@ do
 done
 
 # remove new line char from end for next use of this script
-printf %s "$(< $utils_path/modules.txt)" > $utils_path/modules.txt
+printf %s "$(< ./modules.txt)" > ./modules.txt
 
 mv $tmp_path/config_temp.yaml $tmp_path/config.yaml
