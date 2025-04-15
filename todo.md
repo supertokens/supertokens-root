@@ -26,7 +26,9 @@
       - [x]  if branch set, then no src path override allowed
       - [x]  if no branch set, then src path should be set (if not then assume default for module ?)
       - [x]  service is should be unique
-    - [ ]  link between packages and app
+      - [ ]  check ports to not be used
+    - [x]  link between packages and app
+  - [ ]  windows support
   - [x]  have untracked folder for apps
   - [x]  start all apps/services
   - [ ]  start script to select app to start from filder

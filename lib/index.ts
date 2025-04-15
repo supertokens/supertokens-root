@@ -1,5 +1,5 @@
 export * from './createExampleApp';
-export * from './createSdkService';
+export * from './setupSdkService';
 export * from './validateAppConfig';
 export * from './setRuntimeVersion';
 export * from './runService';

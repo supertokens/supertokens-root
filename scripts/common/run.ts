@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 
 import { existsSync, mkdirSync } from 'fs';
-import { validateAppConfig, setupSDKService, runService, getAppConfig, BASE_APP_DIR } from '../../lib';
+import { validateAppConfig, setupService, runService, getAppConfig, BASE_APP_DIR, BASE_DIR } from '../../lib';
 import path from 'path';
 import { spawn } from 'child_process';
 
@@ -12,7 +12,6 @@ import { spawn } from 'child_process';
   const appDir = path.join(BASE_APP_DIR, appConfig.name);
 
   if (!existsSync(appDir)) {
-    console.warn(`App directory ${appDir} does not exist. Creating...`);
     mkdirSync(appDir, { recursive: true });
   }
 
@@ -23,9 +22,6 @@ import { spawn } from 'child_process';
       if (!appConfig.template) {
         throw new Error('App config must contain a template if there is not service path provided');
       }
-
-      console.log('Processing service', service.id);
-
       // todo cleanup this
       if (service.module === 'node') {
       } else if (service.module === 'auth-react') {
@@ -33,19 +29,25 @@ import { spawn } from 'child_process';
         continue;
       }
 
+      console.log('--------------------------------');
+      console.warn('Processing service:', service.id);
+
       // resolve the srcPath
       if (!service.srcPath) {
         throw new Error(`Src path is required for service ${service.id}`);
       }
 
-      const result = await setupSDKService({
+      await setupService({
         ...service,
         firstFactors: appConfig.template.firstFactors,
         secondFactors: appConfig.template.secondFactors,
         providers: appConfig.template.providers,
         outputPath: path.join(appDir, service.id),
-        srcPath: service.srcPath,
+        srcPath: path.join(BASE_DIR, service.srcPath),
+        config: appConfig,
       });
+
+      console.log();
     }
   } catch (error) {
     console.log();
@@ -58,14 +60,18 @@ import { spawn } from 'child_process';
 
     process.exit(1);
   }
+  console.log();
 
   // Start all services
   const serviceProcesses: Array<{
     process: ReturnType<typeof spawn>;
     servicePath: string;
+    id: string;
   }> = [];
 
   for (const service of appConfig.services) {
+    console.log('--------------------------------');
+
     const servicePath = service.servicePath || path.join(appDir, service.id);
 
     const serviceProcess = runService({
@@ -79,6 +85,7 @@ import { spawn } from 'child_process';
     }
 
     serviceProcesses.push({
+      id: service.id,
       process: serviceProcess,
       servicePath,
     });
@@ -86,13 +93,12 @@ import { spawn } from 'child_process';
 
   // Handle cleanup when main process exits
   const cleanup = () => {
-    console.log('\nStopping all services...');
-    for (const { process, servicePath } of serviceProcesses) {
+    for (const { process, id } of serviceProcesses) {
       try {
         process.kill();
-        console.log(`Stopped service at "${servicePath}"`);
+        console.warn(`Stopped service: ${id}`);
       } catch (err) {
-        console.error(`Failed to stop service at "${servicePath}":`, err);
+        console.error(`Failed to stop service: ${id}`, err);
       }
     }
     process.exit();

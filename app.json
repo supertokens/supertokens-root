@@ -20,6 +20,13 @@
       "srcPath": "./packages/supertokens-auth-react"
     },
     {
+      "id": "webjs",
+      "runtime": "node",
+      "runtimeVersion": "20.0.0",
+      "module": "web-js",
+      "srcPath": "./packages/supertokens-web-js"
+    },
+    {
       "id": "api",
       "runtime": "node",
       "runtimeVersion": "20.0.0",

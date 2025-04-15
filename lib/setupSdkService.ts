@@ -3,17 +3,12 @@ import fs from 'fs';
 import { createExampleApp } from './createExampleApp';
 import { RecipeConfig } from './types';
 import { setRuntimeVersion } from './setRuntimeVersion';
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
 import { AppConfig } from './validateAppConfig';
-// TODO: CLI gh issues
-// exit code 0 on errors
-// wrapper for calling CLI programatically
-// optonal output path
-// config app names for generated apps (in the actual code)
-// allow creating only backend or frontend
+import { BASE_DIR } from '../lib';
 
 export const generateSDKService = async (
-  params: ({ type: 'backend'; framework: 'express' } | { type: 'frontend'; framework: 'react' }) & {
+  params: ({ type: 'backend'; framework: 'express' | 'fastify' } | { type: 'frontend'; framework: 'react' }) & {
     outputPath: string;
     force?: boolean;
   } & RecipeConfig,
@@ -59,36 +54,80 @@ export const generateSDKService = async (
   return params.outputPath;
 };
 
-export const linkLocalNodeSDK = ({ srcPath, servicePath }: { srcPath: string; servicePath: string }) => {
-  console.log(`Linking local packages to "${servicePath}"`);
-  const sdkPath = path.join(srcPath, '.');
-  // Remove any existing symlink before creating new one
-  // const serviceSdkPath = path.join(servicePath, 'node_modules', 'supertokens-node');
-  // if (fs.existsSync(serviceSdkPath)) {
-  //   fs.unlinkSync(serviceSdkPath);
-  // }
-  // fs.symlinkSync(sdkPath, serviceSdkPath);
+export const linkNodePackage = async ({ srcPath, servicePath }: { srcPath: string; servicePath: string }) => {
+  const packageName = srcPath.split('/').pop()!;
+
+  console.log(`Linking "${srcPath}" package to "${servicePath}"`);
+
+  const servicePackagePath = path.join(servicePath, 'node_modules', packageName);
+
+  // v1 - leave this commented out for now, as it might provide useful when if we decide to support hot-reloading of packages?
+  // Change to service directory before linking
+  // await new Promise<void>((resolve, reject) => {
+  //   exec(
+  //     `npm link`,
+  //     {
+  //       cwd: srcPath,
+  //     },
+  //     (error) => {
+  //       if (error) {
+  //         reject(error);
+  //         return;
+  //       }
+  //       resolve();
+  //     },
+  //   );
+  // });
+
+  // await new Promise<void>((resolve, reject) => {
+  //   exec(
+  //     `npm link ${srcPath.split('/').pop()}`,
+  //     {
+  //       cwd: servicePath,
+  //     },
+  //     (error) => {
+  //       if (error) {
+  //         reject(error);
+  //         return;
+  //       }
+  //       resolve();
+  //     },
+  //   );
+  // });
+
+  // remove existing installed package
+  fs.rmSync(servicePackagePath, { recursive: true, force: true });
+  // and create empty directory for it
+  fs.mkdirSync(servicePackagePath, { recursive: true });
+  // create tarball
+  execSync(`npm pack`, { cwd: srcPath, stdio: 'ignore' });
+  // extract tarball
+  execSync(`tar -xf ${packageName}-*.tgz --strip-components=1 -C ${servicePackagePath}`, {
+    cwd: srcPath,
+    stdio: 'ignore',
+  });
+  // install dependencies
+  execSync(`npm install --force --omit=dev`, { cwd: servicePackagePath, stdio: 'ignore' });
+
+  // clean up tarball
+  fs.rmSync(path.join(srcPath, `${packageName}-*.tgz`), { force: true });
 };
 
-const linkLocalReactSDK = ({ srcPath, servicePath }: { srcPath: string; servicePath: string }) => {
-  console.log(`Linking local packages to "${servicePath}"`);
-  const sdkPath = path.join(srcPath, '.');
-  // fs.symlinkSync(sdkPath, path.join(servicePath, 'node_modules', 'supertokens-node'));
-};
-
-const createNodeSDKService = async (
+const setupNodeSDKService = async (
   params: {
     outputPath: string;
     force?: boolean;
-    framework: 'express';
     runtimeVersion: string;
     srcPath: string;
+    config?: {
+      framework?: 'express' | 'fastify';
+    };
   } & RecipeConfig,
 ) => {
   const servicePath = await generateSDKService({
     ...params,
     type: 'backend',
-    framework: params.framework,
+    framework: params?.config?.framework || 'express',
   });
 
   await setRuntimeVersion({
@@ -98,6 +137,7 @@ const createNodeSDKService = async (
   });
 
   console.log(`Installing dependencies for "${servicePath}"`);
+
   await new Promise<void>((resolve, reject) => {
     exec(
       'npm install',
@@ -113,6 +153,8 @@ const createNodeSDKService = async (
       },
     );
   });
+
+  await linkNodePackage({ srcPath: params.srcPath, servicePath });
 
   // create run script
   const runScript = `#!/bin/bash\nnpm run start`;
@@ -134,23 +176,19 @@ const createNodeSDKService = async (
     );
   });
 
-  linkLocalNodeSDK({ srcPath: params.srcPath, servicePath });
-
-  // link local packages
-
   return servicePath;
 };
 
-const createReactSDKService = async (
+const setupReactSDKService = async (
   params: {
     outputPath: string;
     force?: boolean;
-    framework: 'react';
     runtimeVersion: string;
     srcPath: string;
+    config: AppConfig;
   } & RecipeConfig,
 ) => {
-  const servicePath = await generateSDKService({ ...params, type: 'frontend', framework: params.framework });
+  const servicePath = await generateSDKService({ ...params, type: 'frontend', framework: 'react' });
 
   await setRuntimeVersion({
     runtime: 'node',
@@ -195,43 +233,43 @@ const createReactSDKService = async (
     );
   });
 
-  linkLocalReactSDK({ srcPath: params.srcPath, servicePath });
+  linkNodePackage({ srcPath: params.srcPath, servicePath });
+
+  const webJsService = params.config.services.find((service) => service.module === 'web-js');
+  if (webJsService) {
+    if (!webJsService.srcPath) {
+      console.warn(
+        `Could not link web-js package to auth-react package inside the service path because src path is not provided for service ${webJsService.id}`,
+      );
+    } else {
+      // link web-js package to auth-react package inside the service path
+      linkNodePackage({
+        srcPath: path.join(BASE_DIR, webJsService.srcPath),
+        servicePath: path.join(servicePath),
+      });
+
+      linkNodePackage({
+        srcPath: path.join(BASE_DIR, webJsService.srcPath),
+        servicePath: path.join(servicePath, 'node_modules', 'supertokens-auth-react'),
+      });
+    }
+  }
 
   return servicePath;
 };
 
-export const setupSDKService = async (
+export const setupService = async (
   service: AppConfig['services'][number] & {
     outputPath: string;
     force?: boolean;
     srcPath: string;
+    config: AppConfig;
   } & RecipeConfig,
 ) => {
-  let params: { type: 'backend'; framework: 'express' } | { type: 'frontend'; framework: 'react' };
   if (service.module === 'node') {
-    params = {
-      type: 'backend',
-      framework: 'express',
-    };
+    return setupNodeSDKService(service);
   } else if (service.module === 'auth-react') {
-    params = {
-      type: 'frontend',
-      framework: 'react',
-    };
+    return setupReactSDKService(service);
   } else {
-    throw new Error(`Unsupported module: ${service.module}`);
-  }
-
-  const createServicePayload = {
-    ...params,
-    ...service,
-  };
-
-  if (service.runtime === 'node' && params.type === 'backend') {
-    return createNodeSDKService({ ...createServicePayload, framework: 'express' });
-  } else if (service.runtime === 'node' && params.type === 'frontend') {
-    return createReactSDKService({ ...createServicePayload, framework: 'react' });
-  } else {
-    throw new Error(`Unsupported runtime: ${service.runtime}`);
   }
 };

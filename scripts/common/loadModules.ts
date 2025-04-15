@@ -1,5 +1,6 @@
 #!/usr/bin/env ts-node
 
+import { exec } from 'child_process';
 import * as fs from 'fs/promises';
 import { simpleGit as git, CloneOptions } from 'simple-git';
 
@@ -50,6 +51,35 @@ async function main() {
         console.log(`Using fork from user: ${username}`);
       }
 
+      if (
+        module === 'node' ||
+        module === 'auth-react' ||
+        module === 'dashboard' ||
+        module === 'create-supertokens-app' ||
+        module === 'docs'
+      ) {
+        console.log(`Installing dependencies for ${module}...`);
+        try {
+          await new Promise<void>((resolve, reject) => {
+            exec(
+              'npm install',
+              {
+                cwd: destinationPath,
+              },
+              (error) => {
+                if (error) {
+                  reject(error);
+                  return;
+                }
+                resolve();
+              },
+            );
+          });
+          console.log(`Successfully installed dependencies for ${module}`);
+        } catch (error) {
+          console.error(`Failed to install dependencies for ${module}:`, error);
+        }
+      }
       modulesProcessed += 1;
 
       console.log(``);

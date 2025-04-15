@@ -26,7 +26,7 @@ export const runService = (service: { id: string; servicePath: string }) => {
     return false;
   }
 
-  console.log(`Starting service ${service.id}...`);
+  console.warn(`Starting service: ${service.id}...`);
 
   const serviceProcess = spawn('bash', [runScript], {
     cwd: service.servicePath,

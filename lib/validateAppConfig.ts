@@ -10,7 +10,7 @@ const runtimeVersions = {
 
 const runtimeModules = {
   java: ['core'],
-  node: ['node', 'auth-react', 'dashboard', 'docs'],
+  node: ['node', 'auth-react', 'dashboard', 'docs', 'web-js'],
   python: ['python'],
   golang: ['golang'],
 };
@@ -33,6 +33,7 @@ const NodeServiceSchema = z.object({
       dashboardPort: z.number().optional(),
       clientHost: z.string().optional(),
       clientPort: z.number().optional(),
+      framework: z.enum(['express', 'fastify']).optional(),
     })
     .optional(),
 });
@@ -45,6 +46,11 @@ const AuthReactServiceSchema = z.object({
       apiPort: z.number().optional(),
     })
     .optional(),
+});
+
+const WebJSServiceSchema = z.object({
+  module: z.literal('web-js'),
+  config: z.object({}).optional(),
 });
 
 const DocsServiceSchema = z.object({
@@ -97,6 +103,7 @@ export const AppConfigSchema = z
             AuthReactServiceSchema,
             DocsServiceSchema,
             DashboardServiceSchema,
+            WebJSServiceSchema,
           ])
           .and(
             z.object({
