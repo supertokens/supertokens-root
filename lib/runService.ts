@@ -1,6 +1,6 @@
 import { existsSync } from 'fs';
 import path from 'path';
-import { spawn } from 'child_process';
+import { exec, spawn } from 'child_process';
 
 const toConsole = (serviceId: string) => (data: string) => {
   data
@@ -19,14 +19,19 @@ const toError = (serviceId: string) => (data: string) => {
     });
 };
 
-export const runService = (service: { id: string; servicePath: string }) => {
+export const runService = async (service: {
+  id: string;
+  servicePath: string;
+  runtime: string;
+  runtimeVersion: string;
+}) => {
   const runScript = path.join(service.servicePath, 'run');
 
   if (!existsSync(runScript)) {
     return false;
   }
 
-  console.warn(`Starting service: ${service.id}...`);
+  console.warn(`Starting service with ${service.runtime}@${service.runtimeVersion}: ${service.id}...`);
 
   const serviceProcess = spawn('bash', [runScript], {
     cwd: service.servicePath,

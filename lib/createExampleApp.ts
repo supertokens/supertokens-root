@@ -5,7 +5,7 @@ import { RecipeConfig } from './types';
 export const createExampleApp = async (
   params: {
     frontendFramework: 'react';
-    backendFramework: 'express' | 'fastify';
+    backendFramework: 'express' | 'fastify' | 'fastapi' | 'flask' | 'django';
   } & RecipeConfig,
 ): Promise<string> => {
   const appName = `app-${Math.random().toString(36).substring(2, 8)}`;

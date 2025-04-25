@@ -38,6 +38,22 @@ const NodeServiceSchema = z.object({
     .optional(),
 });
 
+const PythonServiceSchema = z.object({
+  module: z.literal('python'),
+  config: z
+    .object({
+      coreURI: z.string().optional(),
+      appId: z.string().optional(),
+      licenseKey: z.string().optional(),
+      dashboardHost: z.string().optional(),
+      dashboardPort: z.number().optional(),
+      clientHost: z.string().optional(),
+      clientPort: z.number().optional(),
+      framework: z.enum(['flask', 'django']).optional(),
+    })
+    .optional(),
+});
+
 const AuthReactServiceSchema = z.object({
   module: z.literal('auth-react'),
   config: z
@@ -104,6 +120,7 @@ export const AppConfigSchema = z
             DocsServiceSchema,
             DashboardServiceSchema,
             WebJSServiceSchema,
+            PythonServiceSchema,
           ])
           .and(
             z.object({

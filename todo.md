@@ -13,10 +13,11 @@
   - [ ]  nestjs
   - [ ]  backend-apis
 - [ ]  linking
-  - [ ]  between packages
+  - [x]  between node packages
+  - [x]  between pythn packages
 - [ ]  Starting/creating example app
-  - [ ]  config script for starting example app
-    - [ ]  config file
+  - [x]  config script for starting example app
+    - [x]  config file
     - [x]  checks:
       - [x]  runtime permits module
       - [x]  runtime permits version
