@@ -17,11 +17,18 @@ import { exec, spawn } from 'child_process';
   const rawAppConfig = getAppConfig();
   const appConfig = validateAppConfig(rawAppConfig);
 
+  const runScript = process.argv[3];
+  if (!runScript) {
+    throw new Error('Run script is required');
+  }
+
   const appDir = path.join(BASE_APP_DIR, appConfig.name);
 
   if (!existsSync(appDir)) {
     mkdirSync(appDir, { recursive: true });
   }
+
+  const servicesToRun: (AppConfig['services'][number] & { runtimeSetCommand: string })[] = [];
 
   try {
     for await (const service of appConfig.services) {
@@ -33,12 +40,12 @@ import { exec, spawn } from 'child_process';
       // todo cleanup this
       if (service.module === 'node') {
       } else if (service.module === 'auth-react') {
+      } else if (service.module === 'web-js') {
       } else if (service.module === 'python') {
       } else {
         continue;
       }
 
-      console.log('--------------------------------');
       console.warn('Processing service:', service.id);
 
       // resolve the srcPath
@@ -46,12 +53,20 @@ import { exec, spawn } from 'child_process';
         throw new Error(`Src path is required for service ${service.id}`);
       }
 
-      await setupService({
+      const servicePath = service.servicePath ? path.join(BASE_APP_DIR, service.servicePath) : undefined;
+
+      const { runtimeSetCommand } = await setupService({
         ...service,
         outputPath: path.join(appDir, service.id),
         srcPath: path.join(BASE_DIR, service.srcPath),
         appConfig,
-        servicePath: service.servicePath ? path.join(BASE_APP_DIR, service.servicePath) : undefined,
+        servicePath,
+      });
+
+      servicesToRun.push({
+        ...service,
+        runtimeSetCommand,
+        servicePath,
       });
 
       console.log();
@@ -69,7 +84,7 @@ import { exec, spawn } from 'child_process';
   }
   console.log();
 
-  // Start all services
+  // Start all startable services
   const serviceProcesses: Array<{
     process: ReturnType<typeof spawn>;
     servicePath: string;
@@ -77,7 +92,8 @@ import { exec, spawn } from 'child_process';
     service: AppConfig['services'][number];
   }> = [];
 
-  for (const service of appConfig.services) {
+  console.log(`Running services with "${runScript}"...`);
+  for (const service of servicesToRun) {
     const servicePath = service.servicePath
       ? path.join(BASE_APP_DIR, service.servicePath)
       : path.join(appDir, service.id);
@@ -85,6 +101,7 @@ import { exec, spawn } from 'child_process';
     const serviceProcess = await runService({
       ...service,
       servicePath,
+      runScript: runScript,
     });
 
     if (!serviceProcess) {

@@ -11,12 +11,23 @@ import {
   DEFAULT_NODE_BACKEND_FRAMEWORK,
   DEFAULT_PYTHON_BACKEND_FRAMEWORK,
 } from '../lib';
+import { writePythonSDKServiceConfig } from './writeConfig';
 
 export const generateSDKService = async (
   params: (
-    | { type: 'backend'; framework: 'express' | 'fastify' | 'fastapi' | 'flask' | 'django' }
-    | { type: 'frontend'; framework: 'react' }
+    | {
+        type: 'backend';
+        framework: 'express' | 'koa' | 'nest' | 'fastapi' | 'flask' | 'django';
+        config?: { clientPort?: number; clientHost?: string; apiHost?: string; coreURI?: string };
+      }
+    | {
+        type: 'frontend';
+        framework: 'react' | 'angular' | 'vue' | 'solid' | 'astro' | 'nuxt' | 'sveltekit';
+        config?: { apiPort?: number; apiHost?: string };
+      }
   ) & {
+    port: number;
+    host: string;
     outputPath: string;
     force?: boolean;
     appConfig: AppConfig;
@@ -29,6 +40,20 @@ export const generateSDKService = async (
     throw new Error('An SDK service can only be generated if the app config contains a template');
   }
 
+  const clientPort = params.type === 'frontend' ? params.port : params.config?.clientPort;
+  const apiPort = params.type === 'backend' ? params.port : params.config?.apiPort;
+  if (!clientPort || !apiPort) {
+    throw new Error('both clientPort and apiPort must be provided');
+  }
+
+  const clientHost = params.type === 'frontend' ? params.host : params.config?.clientHost;
+  const apiHost = params.type === 'backend' ? params.host : params.config?.apiHost;
+  if (!clientHost || !apiHost) {
+    throw new Error('both clientHost and apiHost must be provided');
+  }
+
+  const coreURI = params.type === 'backend' ? params.config?.coreURI : undefined;
+
   console.log(`Creating SDK service at "${params.outputPath}"`);
   const appDir = await createExampleApp({
     frontendFramework,
@@ -36,6 +61,11 @@ export const generateSDKService = async (
     firstFactors: params.appConfig.template.firstFactors,
     secondFactors: params.appConfig.template.secondFactors,
     providers: params.appConfig.template.providers,
+    apiPort,
+    clientPort,
+    apiHost,
+    clientHost,
+    coreURI,
   });
 
   // Copy generated files from CLI output directory to target output path
@@ -83,6 +113,7 @@ export const linkNodePackage = async ({
   const servicePackagePath = path.join(servicePath, 'node_modules', packageName);
 
   // v1 - leave this commented out for now, as it might provide useful when if we decide to support hot-reloading of packages?
+  // todo add support for linking + different/multiple react versions
   // Change to service directory before linking
   // await new Promise<void>((resolve, reject) => {
   //   exec(
@@ -196,23 +227,20 @@ const linkPythonPackage = async ({
   });
 };
 
-const setupNodeSDKService = async (params: {
-  servicePath?: string;
-  outputPath: string;
-  force?: boolean;
-  runtimeVersion: string;
-  srcPath: string;
-  id: string;
-  config?: {
-    framework?: 'express' | 'fastify';
-  };
-  appConfig: AppConfig;
-}) => {
+const setupNodeSDKService = async (
+  params: Extract<AppConfig['services'][number], { module: 'node' }> & {
+    outputPath: string;
+    force?: boolean;
+    srcPath: string;
+    appConfig: AppConfig;
+  },
+) => {
   const servicePath =
     params.servicePath ||
     (await generateSDKService({
       ...params,
       type: 'backend',
+      // @ts-ignore // todo add support for fullstack frameworks
       framework: params?.config?.framework || DEFAULT_NODE_BACKEND_FRAMEWORK,
     }));
 
@@ -243,45 +271,24 @@ const setupNodeSDKService = async (params: {
 
   await linkNodePackage({ srcPath: params.srcPath, servicePath, runtimeSetCommand });
 
-  // create run script
-  const runScript = `#!/bin/bash\n${runtimeSetCommand} && npm run start`;
-  fs.writeFileSync(path.join(servicePath, 'run'), runScript);
-
-  // make script executable
-  await new Promise<void>((resolve, reject) => {
-    exec(
-      'chmod +x run',
-      {
-        cwd: servicePath,
-      },
-      (error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve();
-      },
-    );
-  });
-
-  return servicePath;
+  return { servicePath, runtimeSetCommand };
 };
 
-const setupReactSDKService = async (params: {
-  servicePath?: string;
-  outputPath: string;
-  force?: boolean;
-  runtimeVersion: string;
-  srcPath: string;
-  appConfig: AppConfig;
-  id: string;
-}) => {
+const setupReactSDKService = async (
+  params: Extract<AppConfig['services'][number], { module: 'auth-react' }> & {
+    servicePath?: string;
+    outputPath: string;
+    force?: boolean;
+    srcPath: string;
+    appConfig: AppConfig;
+  },
+) => {
   const servicePath =
     params.servicePath ||
     (await generateSDKService({
       ...params,
       type: 'frontend',
-      // todo add support for other frameworks
+      // @ts-ignore // todo add support for fullstack frameworks
       framework: DEFAULT_FRONTEND_FRAMEWORK,
     }));
 
@@ -309,66 +316,49 @@ const setupReactSDKService = async (params: {
     );
   });
 
-  // create run script
-  const runScript = `#!/bin/bash\n${runtimeSetCommand} && npm run start`;
-  fs.writeFileSync(path.join(servicePath, 'run'), runScript);
-
-  // make script executable
-  await new Promise<void>((resolve, reject) => {
-    exec(
-      'chmod +x run',
-      {
-        cwd: servicePath,
-      },
-      (error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve();
-      },
-    );
-  });
-
   linkNodePackage({ srcPath: params.srcPath, servicePath, runtimeSetCommand });
 
-  const webJsService = params.appConfig.services.find((service) => service.module === 'web-js');
-  if (webJsService) {
-    if (!webJsService.srcPath) {
-      console.warn(
-        `Could not link web-js package to auth-react package inside the service path because src path is not provided for service ${webJsService.id}`,
-      );
-    } else {
-      // link web-js package to auth-react package inside the service path
-      linkNodePackage({
-        srcPath: path.join(BASE_DIR, webJsService.srcPath),
-        servicePath: path.join(servicePath),
-        runtimeSetCommand,
-      });
+  // const webJsService = params.appConfig.services.find((service) => service.module === 'web-js');
+  // if (webJsService) {
+  //   if (!webJsService.srcPath) {
+  //     console.warn(
+  //       `Could not link web-js package to auth-react package inside the service path because src path is not provided for service ${webJsService.id}`,
+  //     );
+  //   } else {
+  //     // link web-js package to auth-react package inside the service path
+  //     linkNodePackage({
+  //       srcPath: path.join(BASE_DIR, webJsService.srcPath),
+  //       servicePath: path.join(servicePath),
+  //       runtimeSetCommand,
+  //     });
 
-      linkNodePackage({
-        srcPath: path.join(BASE_DIR, webJsService.srcPath),
-        servicePath: path.join(servicePath, 'node_modules', 'supertokens-auth-react'),
-        runtimeSetCommand,
-      });
-    }
-  }
+  //     linkNodePackage({
+  //       srcPath: path.join(BASE_DIR, webJsService.srcPath),
+  //       servicePath: path.join(servicePath, 'node_modules', 'supertokens-auth-react'),
+  //       runtimeSetCommand,
+  //     });
+  //   }
+  // }
 
-  return servicePath;
+  return { servicePath, runtimeSetCommand };
 };
 
-const setupPythonSDKService = async (params: {
-  servicePath?: string;
-  outputPath: string;
-  force?: boolean;
-  runtimeVersion: string;
-  srcPath: string;
-  appConfig: AppConfig;
-  id: string;
-  config?: {
-    framework?: 'flask' | 'django';
-  };
-}) => {
+const setupPythonSDKService = async (
+  params: Extract<AppConfig['services'][number], { module: 'python' }> & {
+    outputPath: string;
+    force?: boolean;
+    srcPath: string;
+    appConfig: AppConfig;
+    port: number;
+    host: string;
+    config?: {
+      framework?: 'flask' | 'django' | 'fastapi';
+      clientHost?: string;
+      clientPort?: number;
+      coreURI?: string;
+    };
+  },
+) => {
   const servicePath =
     params.servicePath ||
     (await generateSDKService({
@@ -376,6 +366,8 @@ const setupPythonSDKService = async (params: {
       type: 'backend',
       framework: params.config?.framework || DEFAULT_PYTHON_BACKEND_FRAMEWORK,
     }));
+
+  writePythonSDKServiceConfig({ ...params, servicePath });
 
   const runtimeSetCommand = await getRuntimeSetCommand({
     id: params.id,
@@ -420,18 +412,41 @@ const setupPythonSDKService = async (params: {
 
   await linkPythonPackage({ srcPath: params.srcPath, servicePath, runtimeSetCommand });
 
-  if (params.config?.framework === 'django') {
-    const runScript = `#!/bin/bash\n${runtimeSetCommand} && python manage.py runserver`;
-    fs.writeFileSync(path.join(servicePath, 'run'), runScript);
-  } else {
-    const runScript = `#!/bin/bash\n${runtimeSetCommand} && python app.py`;
-    fs.writeFileSync(path.join(servicePath, 'run'), runScript);
+  return { servicePath, runtimeSetCommand };
+};
+
+const setupWebJSService = async (
+  params: Extract<AppConfig['services'][number], { module: 'web-js' }> & {
+    outputPath: string;
+    force?: boolean;
+    srcPath: string;
+    appConfig: AppConfig;
+  },
+) => {
+  if (!params.config?.framework) {
+    throw new Error('framework is required for web-js service');
   }
 
-  // make script executable
+  const servicePath =
+    params.servicePath ||
+    (await generateSDKService({
+      ...params,
+      type: 'frontend',
+      // @ts-ignore // todo add support for fullstack frameworks
+      framework: params.config?.framework,
+    }));
+
+  const runtimeSetCommand = await getRuntimeSetCommand({
+    id: params.id,
+    runtime: 'node',
+    runtimeVersion: params.runtimeVersion,
+    servicePath,
+  });
+
+  console.log(`Installing dependencies for "${servicePath}"`);
   await new Promise<void>((resolve, reject) => {
     exec(
-      'chmod +x run',
+      `${runtimeSetCommand} && npm install`,
       {
         cwd: servicePath,
       },
@@ -444,6 +459,10 @@ const setupPythonSDKService = async (params: {
       },
     );
   });
+
+  linkNodePackage({ srcPath: params.srcPath, servicePath, runtimeSetCommand });
+
+  return { servicePath, runtimeSetCommand };
 };
 
 export const setupService = async (
@@ -460,6 +479,9 @@ export const setupService = async (
     return setupReactSDKService(service);
   } else if (service.module === 'python') {
     return setupPythonSDKService(service);
+  } else if (service.module === 'web-js') {
+    return setupWebJSService(service);
   } else {
+    throw new Error(`Unsupported service module: ${service.module}`);
   }
 };

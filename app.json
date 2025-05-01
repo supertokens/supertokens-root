@@ -13,35 +13,30 @@
   "strategy": "local",
   "services": [
     {
-      "id": "client",
-      "runtime": "node",
-      "runtimeVersion": "20.0.0",
-      "module": "auth-react",
-      "srcPath": "./packages/supertokens-auth-react"
-    },
-    {
       "id": "webjs",
       "runtime": "node",
       "runtimeVersion": "20.0.0",
       "module": "web-js",
-      "srcPath": "./packages/supertokens-web-js"
+      "srcPath": "./packages/supertokens-web-js",
+      "config": {
+        "framework": "angular"
+      },
+      "scripts": {
+        "start": "npm run start"
+      }
     },
     {
-      "id": "api",
-      "runtime": "node",
-      "runtimeVersion": "20.0.0",
-      "module": "node",
-      "srcPath": "./packages/supertokens-node"
+      "id": "papi",
+      "runtime": "python",
+      "runtimeVersion": "3.9",
+      "module": "python",
+      "srcPath": "./packages/supertokens-python",
+      "scripts": {
+        "start": "python app.py"
+      }
     },
     {
       "id": "core1",
-      "runtime": "java",
-      "runtimeVersion": "15.0.1",
-      "module": "core",
-      "srcPath": "./packages/supertokens-core"
-    },
-    {
-      "id": "core2",
       "runtime": "java",
       "runtimeVersion": "15.0.1",
       "module": "core",

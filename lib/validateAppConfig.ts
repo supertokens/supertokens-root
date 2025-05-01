@@ -33,7 +33,23 @@ const NodeServiceSchema = z.object({
       dashboardPort: z.number().optional(),
       clientHost: z.string().optional(),
       clientPort: z.number().optional(),
-      framework: z.enum(['express', 'fastify']).optional(),
+      framework: z
+        .enum([
+          'express',
+          'koa',
+          'nest',
+          // fullstack frameworks
+          'astro',
+          'nuxt',
+          'sveltekit',
+          'astro-react',
+          'next',
+          'next-multitenancy',
+          'next-app-dir-multitenancy',
+          'remix',
+          'nuxt',
+        ])
+        .optional(),
     })
     .optional(),
 });
@@ -49,7 +65,7 @@ const PythonServiceSchema = z.object({
       dashboardPort: z.number().optional(),
       clientHost: z.string().optional(),
       clientPort: z.number().optional(),
-      framework: z.enum(['flask', 'django']).optional(),
+      framework: z.enum(['flask', 'django', 'fastapi']).optional(),
     })
     .optional(),
 });
@@ -60,13 +76,39 @@ const AuthReactServiceSchema = z.object({
     .object({
       apiHost: z.string().optional(),
       apiPort: z.number().optional(),
+      framework: z
+        .enum([
+          // fullstack frameworks
+          'astro-react',
+          'next',
+          'next-multitenancy',
+          'next-app-dir-multitenancy',
+          'remix',
+          'nuxt',
+        ])
+        .optional(),
     })
     .optional(),
 });
 
 const WebJSServiceSchema = z.object({
   module: z.literal('web-js'),
-  config: z.object({}).optional(),
+  config: z
+    .object({
+      apiHost: z.string().optional(),
+      apiPort: z.number().optional(),
+      framework: z.enum([
+        // 'plain',
+        'solid',
+        'vue',
+        'angular',
+        // fullstack frameworks
+        'astro',
+        'nuxt',
+        'sveltekit',
+      ]),
+    })
+    .optional(),
 });
 
 const DocsServiceSchema = z.object({
@@ -134,6 +176,7 @@ export const AppConfigSchema = z
                 return Math.floor(Math.random() * (portInterval[1] - portInterval[0])) + portInterval[0];
               }),
               branch: z.string().optional(),
+              scripts: z.record(z.string(), z.string()).optional(),
             }),
           )
           .refine(
@@ -211,12 +254,101 @@ export const AppConfigSchema = z
         {
           message: 'Service IDs must be unique',
         },
+      )
+      .refine(
+        (services) => {
+          const authReactServicesWithFullstackFrameworks = services.filter(
+            (service) => service.module === 'auth-react' && service.config?.framework,
+          );
+          const webJSServicesWithFullstackFrameworks = services.filter(
+            (service) => service.module === 'web-js' && service.config?.framework,
+          );
+          const nodeServicesWithFullstackFrameworks = services.filter(
+            (service) =>
+              service.module === 'node' &&
+              service.config?.framework &&
+              [
+                'astro',
+                'nuxt',
+                'sveltekit',
+                'astro-react',
+                'next',
+                'next-multitenancy',
+                'next-app-dir-multitenancy',
+                'remix',
+                'nuxt',
+              ].includes(service.config?.framework),
+          );
+
+          if (authReactServicesWithFullstackFrameworks.length > 1) {
+            return false;
+          }
+          if (webJSServicesWithFullstackFrameworks.length > 1) {
+            return false;
+          }
+          if (nodeServicesWithFullstackFrameworks.length > 1) {
+            return false;
+          }
+
+          return true;
+        },
+        {
+          message:
+            'Multiple services with fullstack frameworks found. Only one service (auth-react, web-js, node) with a fullstack framework is allowed.',
+        },
+      )
+      .refine(
+        (services) => {
+          const authReactServicesWithFullstackFrameworks = services.find(
+            (service) => service.module === 'auth-react' && service.config?.framework,
+          );
+          const webJSServicesWithFullstackFrameworks = services.find(
+            (service) => service.module === 'web-js' && service.config?.framework,
+          );
+          const nodeServicesWithFullstackFrameworks = services.find(
+            (service) =>
+              service.module === 'node' &&
+              service.config?.framework &&
+              [
+                'astro',
+                'nuxt',
+                'sveltekit',
+                'astro-react',
+                'next',
+                'next-multitenancy',
+                'next-app-dir-multitenancy',
+                'remix',
+                'nuxt',
+              ].includes(service.config?.framework),
+          );
+
+          if (webJSServicesWithFullstackFrameworks && authReactServicesWithFullstackFrameworks) {
+            return false;
+          }
+
+          if (
+            !(webJSServicesWithFullstackFrameworks || authReactServicesWithFullstackFrameworks) &&
+            !nodeServicesWithFullstackFrameworks
+          ) {
+            return false;
+          }
+
+          return true;
+        },
+        {
+          message:
+            'At least one node service with a fullstack framework is required and at least one auth-react or web-js service with a fullstack framework is required.',
+        },
       ),
   })
   .transform((appConfig) => {
     const coreServices = appConfig.services.filter((service) => service.module === 'core');
-    const nodeServices = appConfig.services.filter((service) => service.module === 'node');
-    const authReactServices = appConfig.services.filter((service) => service.module === 'auth-react');
+    const backendServices = appConfig.services.filter(
+      (service) => service.module === 'node' || service.module === 'python',
+    );
+    const frontendServices = appConfig.services.filter(
+      (service) => service.module === 'auth-react' || service.module === 'web-js',
+    );
     const docsServices = appConfig.services.filter((service) => service.module === 'docs');
     const dashboardServices = appConfig.services.filter((service) => service.module === 'dashboard');
 
@@ -226,7 +358,7 @@ export const AppConfigSchema = z
         // assume is localhost
         coreURI: `http://${coreServices[0].host}:${coreServices[0].port}`,
       };
-    } else {
+    } else if (coreServices.length > 1) {
       console.warn('Multiple core services found, you will need to set the coreURI manually for the SDK services');
     }
 
@@ -238,47 +370,47 @@ export const AppConfigSchema = z
         dashboardHost: dashboardServices[0].host,
         dashboardPort: dashboardServices[0].port,
       };
-    } else {
+    } else if (dashboardServices.length > 1) {
       console.warn(
         'Multiple dashboard services found, you will need to set the dashboardHost and dashboardPort manually for the SDK services',
       );
     }
 
-    if (authReactServices.length === 1) {
+    if (frontendServices.length === 1) {
       baseSdkServiceConfig = {
         ...baseSdkServiceConfig,
-        clientHost: authReactServices[0].host,
-        clientPort: authReactServices[0].port,
+        clientHost: frontendServices[0].host,
+        clientPort: frontendServices[0].port,
       };
-    } else {
+    } else if (frontendServices.length > 1) {
       console.warn(
-        'Multiple auth-react services found, you will need to set the clientHost and clientPort manually for the SDK services',
+        'Multiple auth-react or web-js services found, you will need to set the clientHost and clientPort manually for the SDK services',
       );
     }
 
     let baseClientServiceConfig = {};
-    if (nodeServices.length === 1) {
+    if (backendServices.length === 1) {
       baseClientServiceConfig = {
         // assume is localhost
-        apiHost: nodeServices[0].host,
-        apiPort: nodeServices[0].port,
+        apiHost: backendServices[0].host,
+        apiPort: backendServices[0].port,
       };
-    } else {
+    } else if (backendServices.length > 1) {
       console.warn(
-        'Multiple node services found, you will need to set the apiHost and apiPort manually for the client services',
+        'Multiple node or python services found, you will need to set the apiHost and apiPort manually for the client services',
       );
     }
 
     // mutations are bad, but it would be complicated to do this without mutating the original appConfig
     for (let index = 0; index < appConfig.services.length; index += 1) {
-      if (appConfig.services[index].module === 'node') {
+      if (appConfig.services[index].module === 'node' || appConfig.services[index].module === 'python') {
         appConfig.services[index].config = {
           ...baseSdkServiceConfig,
           ...appConfig.services[index].config,
         };
       }
 
-      if (appConfig.services[index].module === 'auth-react') {
+      if (appConfig.services[index].module === 'auth-react' || appConfig.services[index].module === 'web-js') {
         appConfig.services[index].config = {
           ...baseClientServiceConfig,
           ...appConfig.services[index].config,

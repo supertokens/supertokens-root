@@ -24,18 +24,21 @@ export const runService = async (service: {
   servicePath: string;
   runtime: string;
   runtimeVersion: string;
+  runScript?: string;
+  scripts?: Record<string, string>;
+  runtimeSetCommand: string;
 }) => {
-  const runScript = path.join(service.servicePath, 'run');
-
-  if (!existsSync(runScript)) {
+  const serviceRunScript = service?.runScript && service?.scripts ? service.scripts[service.runScript] : undefined;
+  if (!serviceRunScript) {
     return false;
   }
 
+  const runScript = `${service.runtimeSetCommand} && ${serviceRunScript}`;
+
   console.warn(`Starting service with ${service.runtime}@${service.runtimeVersion}: ${service.id}...`);
 
-  const serviceProcess = spawn('bash', [runScript], {
+  const serviceProcess = exec(runScript, {
     cwd: service.servicePath,
-    stdio: 'pipe',
   });
 
   // Pipe output to main process stdout/stderr with service prefix

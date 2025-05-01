@@ -4,8 +4,43 @@ import { RecipeConfig } from './types';
 
 export const createExampleApp = async (
   params: {
-    frontendFramework: 'react';
-    backendFramework: 'express' | 'fastify' | 'fastapi' | 'flask' | 'django';
+    frontendFramework:
+      | 'react'
+      | 'angular'
+      | 'vue'
+      | 'solid'
+      // fullstack frameworks
+      | 'astro'
+      | 'nuxt'
+      | 'sveltekit'
+      | 'astro-react'
+      | 'next'
+      | 'next-multitenancy'
+      | 'next-app-dir-multitenancy'
+      | 'remix'
+      | 'nuxt';
+    backendFramework:
+      | 'express'
+      | 'koa'
+      | 'nest'
+      | 'fastapi'
+      | 'flask'
+      | 'django'
+      // fullstack frameworks
+      | 'astro'
+      | 'nuxt'
+      | 'sveltekit'
+      | 'astro-react'
+      | 'next'
+      | 'next-multitenancy'
+      | 'next-app-dir-multitenancy'
+      | 'remix'
+      | 'nuxt';
+    apiHost: string;
+    clientHost: string;
+    apiPort: number;
+    clientPort: number;
+    coreURI?: string;
   } & RecipeConfig,
 ): Promise<string> => {
   const appName = `app-${Math.random().toString(36).substring(2, 8)}`;
@@ -16,10 +51,15 @@ export const createExampleApp = async (
     'npm run dev --',
     `--frontend ${params.frontendFramework}`,
     `--backend ${params.backendFramework}`,
-    `--appname ${appName}`,
     `--firstfactors ${params.firstFactors.join(' ')}`,
     `--secondfactors ${params.secondFactors?.join(' ') || ''}`,
     `--providers ${params.providers?.join(' ') || ''}`,
+    `--appname ${appName}`,
+    `--apiport ${params.apiPort}`,
+    `--apihost ${params.apiHost}`,
+    `--clientport ${params.clientPort}`,
+    `--clienthost ${params.clientHost}`,
+    `--coreuri ${params.coreURI}`,
     '--skip-install',
   ]
     .filter((c) => c)
