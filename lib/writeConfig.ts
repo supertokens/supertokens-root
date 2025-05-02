@@ -2,7 +2,9 @@ import { readFileSync, writeFileSync } from 'fs';
 import path from 'path';
 import { AppConfig } from './validateAppConfig';
 
-export const writePythonSDKServiceConfig = (service: Extract<AppConfig['services'][number], { module: 'python' }>) => {
+export const writePythonSDKServiceConfig = (
+  service: Extract<AppConfig['services'][number] & { servicePath: string }, { module: 'python' }>,
+) => {
   if (service.module !== 'python') {
     throw new Error('Service is not a supertokens-python service');
   }
@@ -47,10 +49,4 @@ export const writePythonSDKServiceConfig = (service: Extract<AppConfig['services
   }
 
   writeFileSync(path.join(service.servicePath, 'config.py'), config);
-};
-
-export const writeConfig = (service: AppConfig['services'][number]) => {
-  if (service.module === 'python') {
-    writePythonSDKServiceConfig(service);
-  }
 };

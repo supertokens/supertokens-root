@@ -40,7 +40,10 @@
       "runtime": "java",
       "runtimeVersion": "15.0.1",
       "module": "core",
-      "srcPath": "./packages/supertokens-core"
+      "srcPath": "./packages/supertokens-core",
+      "scripts": {
+        "start": "cd ../../../../ && ./scripts/core/start"
+      }
     },
     {
       "id": "dashboard",

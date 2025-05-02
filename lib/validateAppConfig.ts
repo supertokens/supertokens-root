@@ -28,7 +28,6 @@ const NodeServiceSchema = z.object({
     .object({
       coreURI: z.string().optional(),
       appId: z.string().optional(),
-      licenseKey: z.string().optional(),
       dashboardHost: z.string().optional(),
       dashboardPort: z.number().optional(),
       clientHost: z.string().optional(),
@@ -60,7 +59,6 @@ const PythonServiceSchema = z.object({
     .object({
       coreURI: z.string().optional(),
       appId: z.string().optional(),
-      licenseKey: z.string().optional(),
       dashboardHost: z.string().optional(),
       dashboardPort: z.number().optional(),
       clientHost: z.string().optional(),
@@ -169,39 +167,13 @@ export const AppConfigSchema = z
               id: z.string(),
               runtime: z.enum(['java', 'node', 'python', 'golang']),
               runtimeVersion: z.string(),
-              srcPath: z.string().optional(),
-              servicePath: z.string().optional(),
+              srcPath: z.string(),
               host: z.string().optional().default('localhost'),
               port: z.number().default(() => {
                 return Math.floor(Math.random() * (portInterval[1] - portInterval[0])) + portInterval[0];
               }),
-              branch: z.string().optional(),
               scripts: z.record(z.string(), z.string()).optional(),
             }),
-          )
-          .refine(
-            (service) => {
-              if (service.branch && service.srcPath) {
-                return false;
-              }
-
-              return true;
-            },
-            {
-              message: 'branch and srcPath cannot both be set',
-            },
-          )
-          .refine(
-            (service) => {
-              if (!service.branch && !service.srcPath) {
-                return false;
-              }
-
-              return true;
-            },
-            {
-              message: 'branch or srcPath is required',
-            },
           )
           .refine(
             (service) => {
@@ -419,29 +391,7 @@ export const AppConfigSchema = z
     }
 
     return appConfig;
-  })
-  .refine(
-    (appConfig) => {
-      if (!appConfig.template && appConfig.services.some((service) => !service.servicePath)) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: 'servicePath is required when not using a template',
-    },
-  )
-  .refine(
-    (appConfig) => {
-      if (appConfig.strategy === 'local' && appConfig.services.some((service) => !service.srcPath)) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: 'srcPath is required when using the "docker-compose" strategy',
-    },
-  );
+  });
 
 export type AppConfig = z.infer<typeof AppConfigSchema>;
 

@@ -33,7 +33,7 @@ export const runService = async (service: {
     return false;
   }
 
-  const runScript = `${service.runtimeSetCommand} && ${serviceRunScript}`;
+  const runScript = [service.runtimeSetCommand, serviceRunScript].filter((cmd) => cmd).join(' && ');
 
   console.warn(`Starting service with ${service.runtime}@${service.runtimeVersion}: ${service.id}...`);
 

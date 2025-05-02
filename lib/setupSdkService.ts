@@ -6,7 +6,7 @@ import { getRuntimeSetCommand } from './setRuntimeVersion';
 import { exec, execSync } from 'child_process';
 import { AppConfig } from './validateAppConfig';
 import {
-  BASE_DIR,
+  BASE_TMP_DIR,
   DEFAULT_FRONTEND_FRAMEWORK,
   DEFAULT_NODE_BACKEND_FRAMEWORK,
   DEFAULT_PYTHON_BACKEND_FRAMEWORK,
@@ -28,7 +28,7 @@ export const generateSDKService = async (
   ) & {
     port: number;
     host: string;
-    outputPath: string;
+    servicePath: string;
     force?: boolean;
     appConfig: AppConfig;
   },
@@ -54,7 +54,7 @@ export const generateSDKService = async (
 
   const coreURI = params.type === 'backend' ? params.config?.coreURI : undefined;
 
-  console.log(`Creating SDK service at "${params.outputPath}"`);
+  console.log(`Creating SDK service at "${params.servicePath}"`);
   const appDir = await createExampleApp({
     frontendFramework,
     backendFramework,
@@ -72,19 +72,19 @@ export const generateSDKService = async (
   if (!fs.existsSync(appDir)) {
     throw new Error(`Expected generated files at "${appDir}" but directory does not exist`);
   }
-  if (fs.existsSync(params.outputPath) && !params.force) {
-    throw new Error(`Output path "${params.outputPath}" already exists. Set 'force: true' to overwrite.`);
+  if (fs.existsSync(params.servicePath) && !params.force) {
+    throw new Error(`Output path "${params.servicePath}" already exists. Set 'force: true' to overwrite.`);
   }
 
   if (params.force) {
-    fs.rmSync(params.outputPath, {
+    fs.rmSync(params.servicePath, {
       recursive: true,
       force: true,
     });
   }
 
   const generatedServiceOutputPath = path.join(appDir, params.type);
-  fs.cpSync(generatedServiceOutputPath, params.outputPath, {
+  fs.cpSync(generatedServiceOutputPath, params.servicePath, {
     recursive: true,
     force: params.force || false,
   });
@@ -94,7 +94,7 @@ export const generateSDKService = async (
     force: params.force || false,
   });
 
-  return params.outputPath;
+  return params.servicePath;
 };
 
 export const linkNodePackage = async ({
@@ -229,35 +229,33 @@ const linkPythonPackage = async ({
 
 const setupNodeSDKService = async (
   params: Extract<AppConfig['services'][number], { module: 'node' }> & {
-    outputPath: string;
+    servicePath: string;
     force?: boolean;
     srcPath: string;
     appConfig: AppConfig;
   },
 ) => {
-  const servicePath =
-    params.servicePath ||
-    (await generateSDKService({
-      ...params,
-      type: 'backend',
-      // @ts-ignore // todo add support for fullstack frameworks
-      framework: params?.config?.framework || DEFAULT_NODE_BACKEND_FRAMEWORK,
-    }));
+  await generateSDKService({
+    ...params,
+    type: 'backend',
+    // @ts-ignore // todo add support for fullstack frameworks
+    framework: params?.config?.framework || DEFAULT_NODE_BACKEND_FRAMEWORK,
+  });
 
   const runtimeSetCommand = await getRuntimeSetCommand({
     id: params.id,
     runtime: 'node',
     runtimeVersion: params.runtimeVersion,
-    servicePath,
+    servicePath: params.servicePath,
   });
 
-  console.log(`Installing dependencies for "${servicePath}"`);
+  console.log(`Installing dependencies for "${params.servicePath}"`);
 
   await new Promise<void>((resolve, reject) => {
     exec(
       `${runtimeSetCommand} && npm install`,
       {
-        cwd: servicePath,
+        cwd: params.servicePath,
       },
       (error) => {
         if (error) {
@@ -269,42 +267,39 @@ const setupNodeSDKService = async (
     );
   });
 
-  await linkNodePackage({ srcPath: params.srcPath, servicePath, runtimeSetCommand });
+  await linkNodePackage({ srcPath: params.srcPath, servicePath: params.servicePath, runtimeSetCommand });
 
-  return { servicePath, runtimeSetCommand };
+  return { servicePath: params.servicePath, runtimeSetCommand };
 };
 
 const setupReactSDKService = async (
   params: Extract<AppConfig['services'][number], { module: 'auth-react' }> & {
-    servicePath?: string;
-    outputPath: string;
+    servicePath: string;
     force?: boolean;
     srcPath: string;
     appConfig: AppConfig;
   },
 ) => {
-  const servicePath =
-    params.servicePath ||
-    (await generateSDKService({
-      ...params,
-      type: 'frontend',
-      // @ts-ignore // todo add support for fullstack frameworks
-      framework: DEFAULT_FRONTEND_FRAMEWORK,
-    }));
+  await generateSDKService({
+    ...params,
+    type: 'frontend',
+    // @ts-ignore // todo add support for fullstack frameworks
+    framework: DEFAULT_FRONTEND_FRAMEWORK,
+  });
 
   const runtimeSetCommand = await getRuntimeSetCommand({
     id: params.id,
     runtime: 'node',
     runtimeVersion: params.runtimeVersion,
-    servicePath,
+    servicePath: params.servicePath,
   });
 
-  console.log(`Installing dependencies for "${servicePath}"`);
+  console.log(`Installing dependencies for "${params.servicePath}"`);
   await new Promise<void>((resolve, reject) => {
     exec(
       `${runtimeSetCommand} && npm install`,
       {
-        cwd: servicePath,
+        cwd: params.servicePath,
       },
       (error) => {
         if (error) {
@@ -316,73 +311,41 @@ const setupReactSDKService = async (
     );
   });
 
-  linkNodePackage({ srcPath: params.srcPath, servicePath, runtimeSetCommand });
+  linkNodePackage({ srcPath: params.srcPath, servicePath: params.servicePath, runtimeSetCommand });
 
-  // const webJsService = params.appConfig.services.find((service) => service.module === 'web-js');
-  // if (webJsService) {
-  //   if (!webJsService.srcPath) {
-  //     console.warn(
-  //       `Could not link web-js package to auth-react package inside the service path because src path is not provided for service ${webJsService.id}`,
-  //     );
-  //   } else {
-  //     // link web-js package to auth-react package inside the service path
-  //     linkNodePackage({
-  //       srcPath: path.join(BASE_DIR, webJsService.srcPath),
-  //       servicePath: path.join(servicePath),
-  //       runtimeSetCommand,
-  //     });
-
-  //     linkNodePackage({
-  //       srcPath: path.join(BASE_DIR, webJsService.srcPath),
-  //       servicePath: path.join(servicePath, 'node_modules', 'supertokens-auth-react'),
-  //       runtimeSetCommand,
-  //     });
-  //   }
-  // }
-
-  return { servicePath, runtimeSetCommand };
+  return { servicePath: params.servicePath, runtimeSetCommand };
 };
 
 const setupPythonSDKService = async (
   params: Extract<AppConfig['services'][number], { module: 'python' }> & {
-    outputPath: string;
+    servicePath: string;
     force?: boolean;
     srcPath: string;
     appConfig: AppConfig;
-    port: number;
-    host: string;
-    config?: {
-      framework?: 'flask' | 'django' | 'fastapi';
-      clientHost?: string;
-      clientPort?: number;
-      coreURI?: string;
-    };
   },
 ) => {
-  const servicePath =
-    params.servicePath ||
-    (await generateSDKService({
-      ...params,
-      type: 'backend',
-      framework: params.config?.framework || DEFAULT_PYTHON_BACKEND_FRAMEWORK,
-    }));
+  await generateSDKService({
+    ...params,
+    type: 'backend',
+    framework: params.config?.framework || DEFAULT_PYTHON_BACKEND_FRAMEWORK,
+  });
 
-  writePythonSDKServiceConfig({ ...params, servicePath });
+  writePythonSDKServiceConfig({ ...params, servicePath: params.servicePath });
 
   const runtimeSetCommand = await getRuntimeSetCommand({
     id: params.id,
     runtime: 'python',
     runtimeVersion: params.runtimeVersion,
-    servicePath,
+    servicePath: params.servicePath,
   });
 
-  console.log(`Installing dependencies for "${servicePath}"`);
+  console.log(`Installing dependencies for "${params.servicePath}"`);
 
   await new Promise<void>((resolve, reject) => {
     exec(
       `${runtimeSetCommand} && source .venv/bin/activate`,
       {
-        cwd: servicePath,
+        cwd: params.servicePath,
       },
       (error) => {
         if (error) {
@@ -398,7 +361,7 @@ const setupPythonSDKService = async (
     exec(
       `${runtimeSetCommand} && pip install -r requirements.txt`,
       {
-        cwd: servicePath,
+        cwd: params.servicePath,
       },
       (error) => {
         if (error) {
@@ -410,14 +373,14 @@ const setupPythonSDKService = async (
     );
   });
 
-  await linkPythonPackage({ srcPath: params.srcPath, servicePath, runtimeSetCommand });
+  await linkPythonPackage({ srcPath: params.srcPath, servicePath: params.servicePath, runtimeSetCommand });
 
-  return { servicePath, runtimeSetCommand };
+  return { servicePath: params.servicePath, runtimeSetCommand };
 };
 
 const setupWebJSService = async (
   params: Extract<AppConfig['services'][number], { module: 'web-js' }> & {
-    outputPath: string;
+    servicePath: string;
     force?: boolean;
     srcPath: string;
     appConfig: AppConfig;
@@ -427,28 +390,26 @@ const setupWebJSService = async (
     throw new Error('framework is required for web-js service');
   }
 
-  const servicePath =
-    params.servicePath ||
-    (await generateSDKService({
-      ...params,
-      type: 'frontend',
-      // @ts-ignore // todo add support for fullstack frameworks
-      framework: params.config?.framework,
-    }));
+  await generateSDKService({
+    ...params,
+    type: 'frontend',
+    // @ts-ignore // todo add support for fullstack frameworks
+    framework: params.config?.framework,
+  });
 
   const runtimeSetCommand = await getRuntimeSetCommand({
     id: params.id,
     runtime: 'node',
     runtimeVersion: params.runtimeVersion,
-    servicePath,
+    servicePath: params.servicePath,
   });
 
-  console.log(`Installing dependencies for "${servicePath}"`);
+  console.log(`Installing dependencies for "${params.servicePath}"`);
   await new Promise<void>((resolve, reject) => {
     exec(
       `${runtimeSetCommand} && npm install`,
       {
-        cwd: servicePath,
+        cwd: params.servicePath,
       },
       (error) => {
         if (error) {
@@ -460,14 +421,47 @@ const setupWebJSService = async (
     );
   });
 
-  linkNodePackage({ srcPath: params.srcPath, servicePath, runtimeSetCommand });
+  linkNodePackage({ srcPath: params.srcPath, servicePath: params.servicePath, runtimeSetCommand });
 
-  return { servicePath, runtimeSetCommand };
+  return { servicePath: params.servicePath, runtimeSetCommand };
+};
+
+const setupCoreService = async (
+  params: Extract<AppConfig['services'][number], { module: 'core' }> & {
+    servicePath: string;
+    force?: boolean;
+    srcPath: string;
+    appConfig: AppConfig;
+  },
+) => {
+  // nothing to be setup here. since the service is actually the core package itself, we just return the srcPath
+  // the java version is not changeable at the moment, so we don't need to return the runtimeSetCommand
+
+  if (!fs.existsSync(params.servicePath)) {
+    fs.mkdirSync(params.servicePath, { recursive: true });
+  }
+
+  const coreConfig = `
+core_config_version: 0
+port: ${params.port}
+`;
+  fs.writeFileSync(path.join(params.servicePath, 'config.yaml'), coreConfig);
+
+  const coreTempPath = path.join(BASE_TMP_DIR, 'supertokens-core');
+  if (!fs.existsSync(coreTempPath)) {
+    throw new Error(`The core module has not been loaded.`);
+  }
+
+  fs.cpSync(path.join(params.servicePath, 'config.yaml'), path.join(coreTempPath, 'config.yaml'), {
+    recursive: true,
+  });
+
+  return { servicePath: params.servicePath, runtimeSetCommand: '' };
 };
 
 export const setupService = async (
   service: AppConfig['services'][number] & {
-    outputPath: string;
+    servicePath: string;
     force?: boolean;
     srcPath: string;
     appConfig: AppConfig;
@@ -481,6 +475,8 @@ export const setupService = async (
     return setupPythonSDKService(service);
   } else if (service.module === 'web-js') {
     return setupWebJSService(service);
+  } else if (service.module === 'core') {
+    return setupCoreService(service);
   } else {
     throw new Error(`Unsupported service module: ${service.module}`);
   }

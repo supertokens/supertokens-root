@@ -28,7 +28,7 @@ import { exec, spawn } from 'child_process';
     mkdirSync(appDir, { recursive: true });
   }
 
-  const servicesToRun: (AppConfig['services'][number] & { runtimeSetCommand: string })[] = [];
+  const servicesToRun: (AppConfig['services'][number] & { runtimeSetCommand: string; servicePath: string })[] = [];
 
   try {
     for await (const service of appConfig.services) {
@@ -42,6 +42,7 @@ import { exec, spawn } from 'child_process';
       } else if (service.module === 'auth-react') {
       } else if (service.module === 'web-js') {
       } else if (service.module === 'python') {
+      } else if (service.module === 'core') {
       } else {
         continue;
       }
@@ -53,14 +54,11 @@ import { exec, spawn } from 'child_process';
         throw new Error(`Src path is required for service ${service.id}`);
       }
 
-      const servicePath = service.servicePath ? path.join(BASE_APP_DIR, service.servicePath) : undefined;
-
-      const { runtimeSetCommand } = await setupService({
+      const { runtimeSetCommand, servicePath } = await setupService({
         ...service,
-        outputPath: path.join(appDir, service.id),
+        servicePath: path.join(appDir, service.id),
         srcPath: path.join(BASE_DIR, service.srcPath),
         appConfig,
-        servicePath,
       });
 
       servicesToRun.push({
@@ -85,23 +83,19 @@ import { exec, spawn } from 'child_process';
   console.log();
 
   // Start all startable services
-  const serviceProcesses: Array<{
-    process: ReturnType<typeof spawn>;
-    servicePath: string;
-    id: string;
-    service: AppConfig['services'][number];
-  }> = [];
+  const serviceProcesses: Array<
+    AppConfig['services'][number] & {
+      process: ReturnType<typeof spawn>;
+      servicePath: string;
+    }
+  > = [];
 
   console.log(`Running services with "${runScript}"...`);
   for (const service of servicesToRun) {
-    const servicePath = service.servicePath
-      ? path.join(BASE_APP_DIR, service.servicePath)
-      : path.join(appDir, service.id);
-
+    console.log(`Running service: ${service.id} at ${service.servicePath}`);
     const serviceProcess = await runService({
       ...service,
-      servicePath,
-      runScript: runScript,
+      runScript,
     });
 
     if (!serviceProcess) {
@@ -110,16 +104,14 @@ import { exec, spawn } from 'child_process';
     }
 
     serviceProcesses.push({
-      id: service.id,
+      ...service,
       process: serviceProcess,
-      servicePath,
-      service,
     });
   }
 
   // Handle cleanup when main process exits
   const cleanup = () => {
-    for (const { process, id, servicePath, service } of serviceProcesses) {
+    for (const { process, id, servicePath, module } of serviceProcesses) {
       try {
         process.kill();
         console.warn(`Stopped service: ${id}`);
@@ -127,7 +119,7 @@ import { exec, spawn } from 'child_process';
         console.error(`Failed to stop service: ${id}`, err);
       }
 
-      if (service.module === 'python') {
+      if (module === 'python') {
         try {
           if (existsSync(path.join(servicePath, '.venv'))) {
             console.log(`Deactivating venv for service: ${id}`);
