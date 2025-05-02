@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start-clean": "rm -rf ./.tmp/apps/* && ./scripts/common/run.ts ./app.json"
+    "start-clean": "./scripts/common/run.ts ./app.json start --force",
+    "start": "./scripts/common/run.ts ./app.json start"
   },
   "repository": {
     "type": "git",

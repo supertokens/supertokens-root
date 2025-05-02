@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node
 
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, rmSync } from 'fs';
 import {
   validateAppConfig,
   setupService,
@@ -9,23 +9,27 @@ import {
   BASE_APP_DIR,
   BASE_DIR,
   AppConfig,
+  getRuntimeSetCommand,
+  getRunParams,
 } from '../../lib';
 import path from 'path';
 import { exec, spawn } from 'child_process';
 
 (async () => {
-  const rawAppConfig = getAppConfig();
-  const appConfig = validateAppConfig(rawAppConfig);
+  const { configPath, script, force } = getRunParams();
 
-  const runScript = process.argv[3];
-  if (!runScript) {
-    throw new Error('Run script is required');
-  }
+  const rawAppConfig = getAppConfig(configPath);
+  const appConfig = validateAppConfig(rawAppConfig);
 
   const appDir = path.join(BASE_APP_DIR, appConfig.name);
 
   if (!existsSync(appDir)) {
     mkdirSync(appDir, { recursive: true });
+  }
+
+  if (force) {
+    console.log('Cleaning up app directory because --force was set...');
+    rmSync(appDir, { recursive: true });
   }
 
   const servicesToRun: (AppConfig['services'][number] & { runtimeSetCommand: string; servicePath: string })[] = [];
@@ -54,12 +58,23 @@ import { exec, spawn } from 'child_process';
         throw new Error(`Src path is required for service ${service.id}`);
       }
 
-      const { runtimeSetCommand, servicePath } = await setupService({
+      const servicePath = path.join(appDir, service.id);
+
+      const runtimeSetCommand = await getRuntimeSetCommand({
         ...service,
-        servicePath: path.join(appDir, service.id),
-        srcPath: path.join(BASE_DIR, service.srcPath),
-        appConfig,
+        servicePath,
       });
+
+      // reset the service if force is set to true
+      if (!existsSync(servicePath)) {
+        await setupService({
+          ...service,
+          servicePath,
+          srcPath: path.join(BASE_DIR, service.srcPath),
+          runtimeSetCommand,
+          appConfig,
+        });
+      }
 
       servicesToRun.push({
         ...service,
@@ -90,12 +105,12 @@ import { exec, spawn } from 'child_process';
     }
   > = [];
 
-  console.log(`Running services with "${runScript}"...`);
+  console.log(`Running services with "${script}"...`);
   for (const service of servicesToRun) {
     console.log(`Running service: ${service.id} at ${service.servicePath}`);
     const serviceProcess = await runService({
       ...service,
-      runScript,
+      runScript: script,
     });
 
     if (!serviceProcess) {

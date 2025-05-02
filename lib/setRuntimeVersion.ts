@@ -129,6 +129,8 @@ export const getRuntimeSetCommand = async ({
     return await getNodeRuntimeSetCommand({ servicePath, runtimeVersion, id });
   } else if (runtime === 'python') {
     return await getPythonRuntimeSetCommand({ servicePath, runtimeVersion, id });
+  } else if (runtime === 'java') {
+    return '';
   } else {
     throw new Error(`Unsupported runtime: ${runtime}`);
   }
