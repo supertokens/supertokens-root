@@ -6,7 +6,7 @@ if [[ $(git log origin/master ^HEAD) ]]; then
 fi
 
 # Verify java version
-REQUIRED_JAVA_VERSION="15.0.1"
+REQUIRED_JAVA_VERSION="21.0.7"
 JAVA_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
 
 if [[ "$JAVA_VERSION" == "$REQUIRED_JAVA_VERSION" ]]; then
