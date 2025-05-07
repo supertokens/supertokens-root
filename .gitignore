@@ -55,6 +55,7 @@ ent-*
 /downloader/
 /ee/
 /config.yaml
+/config*.yaml
 /logs
 /version.yaml
 /.webserver-temp
@@ -63,6 +64,7 @@ ent-*
 /apiPassword
 /temp
 .started/
+.started*/
 webserver-temp/
 releasePassword
 /jre/
