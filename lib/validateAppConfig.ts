@@ -1,5 +1,9 @@
-import fs from 'fs';
+import fs, { readSync } from 'fs';
 import { z } from 'zod';
+import { getModules } from './getModules';
+import { BACKEND_TARGETS, FRONTEND_TARGETS, LIB_TARGETS, MODULE_TARGETS, ServiceTarget } from './constants';
+
+const allowedModules = getModules();
 
 const runtimeVersions = {
   java: ['15.0.1'],
@@ -17,121 +21,27 @@ const runtimeModules = {
 
 const portInterval = [3000, 6000];
 
-const CoreServiceSchema = z.object({
-  module: z.literal('core'),
-  config: z.object({}).optional(),
-});
-
-const NodeServiceSchema = z.object({
-  module: z.literal('node'),
-  config: z
-    .object({
-      coreURI: z.string().optional(),
-      appId: z.string().optional(),
-      dashboardHost: z.string().optional(),
-      dashboardPort: z.number().optional(),
-      clientHost: z.string().optional(),
-      clientPort: z.number().optional(),
-      framework: z
-        .enum([
-          'express',
-          'koa',
-          'nest',
-          // fullstack frameworks
-          'astro',
-          'nuxt',
-          'sveltekit',
-          'astro-react',
-          'next',
-          'next-multitenancy',
-          'next-app-dir-multitenancy',
-          'remix',
-          'nuxt',
-        ])
-        .optional(),
-    })
-    .optional(),
-});
-
-const PythonServiceSchema = z.object({
-  module: z.literal('python'),
-  config: z
-    .object({
-      coreURI: z.string().optional(),
-      appId: z.string().optional(),
-      dashboardHost: z.string().optional(),
-      dashboardPort: z.number().optional(),
-      clientHost: z.string().optional(),
-      clientPort: z.number().optional(),
-      framework: z.enum(['flask', 'django', 'fastapi']).optional(),
-    })
-    .optional(),
-});
-
-const AuthReactServiceSchema = z.object({
-  module: z.literal('auth-react'),
-  config: z
-    .object({
-      apiHost: z.string().optional(),
-      apiPort: z.number().optional(),
-      framework: z
-        .enum([
-          // fullstack frameworks
-          'astro-react',
-          'next',
-          'next-multitenancy',
-          'next-app-dir-multitenancy',
-          'remix',
-          'nuxt',
-        ])
-        .optional(),
-    })
-    .optional(),
-});
-
-const WebJSServiceSchema = z.object({
-  module: z.literal('web-js'),
-  config: z
-    .object({
-      apiHost: z.string().optional(),
-      apiPort: z.number().optional(),
-      framework: z.enum([
-        // 'plain',
-        'solid',
-        'vue',
-        'angular',
-        // fullstack frameworks
-        'astro',
-        'nuxt',
-        'sveltekit',
-      ]),
-    })
-    .optional(),
-});
-
-const DocsServiceSchema = z.object({
-  module: z.literal('docs'),
-  config: z.object({}).optional(),
-});
-
-const DashboardServiceSchema = z.object({
-  module: z.literal('dashboard'),
-  config: z.object({}).optional(),
-});
-
 export const AppConfigSchema = z
   .object({
     name: z.string(),
-    strategy: z.enum(['local', 'docker-compose']),
+    strategy: z
+      .enum(['local', 'docker'])
+      .describe(
+        'Defines how the app will be run. local - will run the app locally. docker - will run the app using docker compose.',
+      ),
     template: z
       .object({
         firstFactors: z
           .array(z.enum(['emailpassword', 'thirdparty', 'otp-phone', 'otp-email', 'link-phone', 'link-email']))
           .min(1),
         secondFactors: z.array(z.enum(['otp-phone', 'otp-email', 'link-phone', 'link-email', 'totp'])).optional(),
-        providers: z.array(z.enum(['google', 'github', 'apple', 'twitter'])).optional(),
+        providers: z
+          .array(z.enum(['google', 'github', 'apple', 'twitter']))
+          .optional()
+          .describe(
+            'Defines the providers that will be used for the first factors. If the first factor is not thirdparty, this will be ignored, otherwise it is mandatory to set the providers.',
+          ),
       })
-      .optional()
       .refine(
         (template) => {
           if (!template) return true;
@@ -148,73 +58,118 @@ export const AppConfigSchema = z
         {
           message: 'thirdparty first factors require providers being set',
         },
+      )
+      .describe(
+        'Defines the template for how the SDKs will be configured in the apps. It matches the inputs from the create-supertokens-app command.',
       ),
 
     services: z
       .array(
         z
-          .discriminatedUnion('module', [
-            CoreServiceSchema,
-            NodeServiceSchema,
-            AuthReactServiceSchema,
-            DocsServiceSchema,
-            DashboardServiceSchema,
-            WebJSServiceSchema,
-            PythonServiceSchema,
-          ])
+          .object({
+            id: z.string(),
+            libs: z.array(z.enum(allowedModules.map((module) => module.name) as [string, ...string[]])).optional(),
+            runtime: z.enum(['java', 'node', 'python']),
+            runtimeVersion: z
+              .string()
+              .describe('The version of the runtime to use for the service. It will be automatically set.'),
+            scripts: z
+              .record(z.string(), z.string())
+              .optional()
+              .describe(
+                'The scripts that the service will have available to run. The key is the name of the script and the value is the command to run the script. A start and a build script should be provided, though they are not mandatory.',
+              ),
+          })
           .and(
-            z.object({
-              id: z.string(),
-              runtime: z.enum(['java', 'node', 'python', 'golang']),
-              runtimeVersion: z.string(),
-              srcPath: z.string(),
-              host: z.string().optional().default('localhost'),
-              port: z.number().default(() => {
-                return Math.floor(Math.random() * (portInterval[1] - portInterval[0])) + portInterval[0];
+            z.union([
+              z.object({
+                target: z.enum(LIB_TARGETS),
               }),
-              scripts: z.record(z.string(), z.string()).optional(),
-            }),
-          )
-          .refine(
-            (service) => {
-              const allowedRuntimeVersions = runtimeVersions[service.runtime];
-              const isVersionAllowed = allowedRuntimeVersions.reduce((acc, version) => {
-                if (service.runtimeVersion.startsWith(version)) {
-                  return acc || true;
-                }
-
-                return acc;
-              }, false);
-
-              return isVersionAllowed;
-            },
-            (service) => {
-              const allowedRuntimeVersions = runtimeVersions[service.runtime];
-              return {
-                message: `Runtime version not supported. Allowed versions: ${allowedRuntimeVersions.join(', ')}`,
-              };
-            },
-          )
-          .refine(
-            (service) => {
-              const allowedRuntimeModules = runtimeModules[service.runtime];
-              return allowedRuntimeModules.includes(service.module);
-            },
-            (service) => {
-              const allowedRuntimeModules = runtimeModules[service.runtime];
-              return {
-                message: `Runtime module not supported. Allowed modules: ${allowedRuntimeModules.join(', ')}`,
-              };
-            },
-          )
-          .refine(
-            (service) => {
-              if (service.srcPath) {
-                return fs.existsSync(service.srcPath);
-              }
-              return true;
-            },
-            { message: 'srcPath does not exist' },
+              z.object({
+                target: z.enum(MODULE_TARGETS),
+                host: z
+                  .string()
+                  .default('localhost')
+                  .describe('The host to run the service on. It will be automatically set if the service allows it.'),
+                port: z
+                  .number()
+                  .default(() => {
+                    return Math.floor(Math.random() * (portInterval[1] - portInterval[0])) + portInterval[0];
+                  })
+                  .describe('The port to run the service on. It will be automatically set if not provided.'),
+              }),
+              z.object({
+                target: z.enum(BACKEND_TARGETS),
+                host: z
+                  .string()
+                  .default('localhost')
+                  .describe('The host to run the service on. It will be automatically set if the service allows it.'),
+                port: z
+                  .number()
+                  .default(() => {
+                    return Math.floor(Math.random() * (portInterval[1] - portInterval[0])) + portInterval[0];
+                  })
+                  .describe('The port to run the service on. It will be automatically set if not provided.'),
+                config: z
+                  .object({
+                    coreURI: z.string().optional().describe('The URI of the core service.'),
+                    dashboardHost: z
+                      .string()
+                      .optional()
+                      .describe(
+                        'The host that the dashboard will be available on. If not set, this will be automatically resolved using the dashboard service (if defined and only one is present).',
+                      ),
+                    dashboardPort: z
+                      .number()
+                      .optional()
+                      .describe(
+                        'The port that the dashboard will be available on. If not set, this will be automatically resolved using the dashboard service (if defined and only one is present).',
+                      ),
+                    clientHost: z
+                      .string()
+                      .optional()
+                      .describe(
+                        'The host that the client will be available on. If not set, this will be automatically resolved using the auth-react or web-js service (if defined and only one of them is present).',
+                      ),
+                    clientPort: z
+                      .number()
+                      .optional()
+                      .describe(
+                        'The port that the client will be available on. If not set, this will be automatically resolved using the auth-react or web-js service (if defined and only one of them is present).',
+                      ),
+                  })
+                  .optional(),
+              }),
+              z.object({
+                target: z.enum(FRONTEND_TARGETS),
+                host: z
+                  .string()
+                  .default('localhost')
+                  .describe('The host to run the service on. It will be automatically set if the service allows it.'),
+                port: z
+                  .number()
+                  .default(() => {
+                    return Math.floor(Math.random() * (portInterval[1] - portInterval[0])) + portInterval[0];
+                  })
+                  .describe('The port to run the service on. It will be automatically set if not provided.'),
+                config: z
+                  .object({
+                    apiHost: z
+                      .string()
+                      .optional()
+                      .describe(
+                        'The host that the API will be available on. If not set, this will be automatically resolved using the node or python service (if defined and only one is present).',
+                      ),
+                    apiPort: z
+                      .number()
+                      .optional()
+                      .describe(
+                        'The port that the API will be available on. If not set, this will be automatically resolved using the node or python service (if defined and only one is present).',
+                      ),
+                  })
+                  .optional(),
+              }),
+            ]),
           ),
       )
       .min(1)
@@ -226,108 +181,25 @@ export const AppConfigSchema = z
         {
           message: 'Service IDs must be unique',
         },
-      )
-      .refine(
-        (services) => {
-          const authReactServicesWithFullstackFrameworks = services.filter(
-            (service) => service.module === 'auth-react' && service.config?.framework,
-          );
-          const webJSServicesWithFullstackFrameworks = services.filter(
-            (service) => service.module === 'web-js' && service.config?.framework,
-          );
-          const nodeServicesWithFullstackFrameworks = services.filter(
-            (service) =>
-              service.module === 'node' &&
-              service.config?.framework &&
-              [
-                'astro',
-                'nuxt',
-                'sveltekit',
-                'astro-react',
-                'next',
-                'next-multitenancy',
-                'next-app-dir-multitenancy',
-                'remix',
-                'nuxt',
-              ].includes(service.config?.framework),
-          );
-
-          if (authReactServicesWithFullstackFrameworks.length > 1) {
-            return false;
-          }
-          if (webJSServicesWithFullstackFrameworks.length > 1) {
-            return false;
-          }
-          if (nodeServicesWithFullstackFrameworks.length > 1) {
-            return false;
-          }
-
-          return true;
-        },
-        {
-          message:
-            'Multiple services with fullstack frameworks found. Only one service (auth-react, web-js, node) with a fullstack framework is allowed.',
-        },
-      )
-      .refine(
-        (services) => {
-          const authReactServicesWithFullstackFrameworks = services.find(
-            (service) => service.module === 'auth-react' && service.config?.framework,
-          );
-          const webJSServicesWithFullstackFrameworks = services.find(
-            (service) => service.module === 'web-js' && service.config?.framework,
-          );
-          const nodeServicesWithFullstackFrameworks = services.find(
-            (service) =>
-              service.module === 'node' &&
-              service.config?.framework &&
-              [
-                'astro',
-                'nuxt',
-                'sveltekit',
-                'astro-react',
-                'next',
-                'next-multitenancy',
-                'next-app-dir-multitenancy',
-                'remix',
-                'nuxt',
-              ].includes(service.config?.framework),
-          );
-
-          if (webJSServicesWithFullstackFrameworks && authReactServicesWithFullstackFrameworks) {
-            return false;
-          }
-
-          if (
-            !(webJSServicesWithFullstackFrameworks || authReactServicesWithFullstackFrameworks) &&
-            !nodeServicesWithFullstackFrameworks
-          ) {
-            return false;
-          }
-
-          return true;
-        },
-        {
-          message:
-            'At least one node service with a fullstack framework is required and at least one auth-react or web-js service with a fullstack framework is required.',
-        },
       ),
   })
   .transform((appConfig) => {
-    const coreServices = appConfig.services.filter((service) => service.module === 'core');
-    const backendServices = appConfig.services.filter(
-      (service) => service.module === 'node' || service.module === 'python',
+    const coreServices = appConfig.services.filter((service) => service.target === ServiceTarget.SupertokensCore);
+
+    const backendServices = appConfig.services.filter((service) =>
+      (BACKEND_TARGETS as unknown as string[]).includes(service.target),
     );
-    const frontendServices = appConfig.services.filter(
-      (service) => service.module === 'auth-react' || service.module === 'web-js',
+    const frontendServices = appConfig.services.filter((service) =>
+      (FRONTEND_TARGETS as unknown as string[]).includes(service.target),
     );
-    const docsServices = appConfig.services.filter((service) => service.module === 'docs');
-    const dashboardServices = appConfig.services.filter((service) => service.module === 'dashboard');
+    const docsServices = appConfig.services.filter((service) => service.target === ServiceTarget.Docs);
+    const dashboardServices = appConfig.services.filter((service) => service.target === ServiceTarget.Dashboard);
 
     let baseSdkServiceConfig = {};
     if (coreServices.length === 1) {
       baseSdkServiceConfig = {
         // assume is localhost
+        // @ts-ignore
         coreURI: `http://${coreServices[0].host}:${coreServices[0].port}`,
       };
     } else if (coreServices.length > 1) {
@@ -339,7 +211,9 @@ export const AppConfigSchema = z
       baseSdkServiceConfig = {
         ...baseSdkServiceConfig,
         // assume is localhost
+        // @ts-ignore
         dashboardHost: dashboardServices[0].host,
+        // @ts-ignore
         dashboardPort: dashboardServices[0].port,
       };
     } else if (dashboardServices.length > 1) {
@@ -351,7 +225,9 @@ export const AppConfigSchema = z
     if (frontendServices.length === 1) {
       baseSdkServiceConfig = {
         ...baseSdkServiceConfig,
+        // @ts-ignore
         clientHost: frontendServices[0].host,
+        // @ts-ignore
         clientPort: frontendServices[0].port,
       };
     } else if (frontendServices.length > 1) {
@@ -364,7 +240,9 @@ export const AppConfigSchema = z
     if (backendServices.length === 1) {
       baseClientServiceConfig = {
         // assume is localhost
+        // @ts-ignore
         apiHost: backendServices[0].host,
+        // @ts-ignore
         apiPort: backendServices[0].port,
       };
     } else if (backendServices.length > 1) {
@@ -375,17 +253,17 @@ export const AppConfigSchema = z
 
     // mutations are bad, but it would be complicated to do this without mutating the original appConfig
     for (let index = 0; index < appConfig.services.length; index += 1) {
-      if (appConfig.services[index].module === 'node' || appConfig.services[index].module === 'python') {
-        appConfig.services[index].config = {
+      if (BACKEND_TARGETS.includes(appConfig.services[index].target as any)) {
+        (appConfig.services[index] as any).config = {
           ...baseSdkServiceConfig,
-          ...appConfig.services[index].config,
+          ...(appConfig.services[index] as any).config,
         };
       }
 
-      if (appConfig.services[index].module === 'auth-react' || appConfig.services[index].module === 'web-js') {
-        appConfig.services[index].config = {
+      if (FRONTEND_TARGETS.includes(appConfig.services[index].target as any)) {
+        (appConfig.services[index] as any).config = {
           ...baseClientServiceConfig,
-          ...appConfig.services[index].config,
+          ...(appConfig.services[index] as any).config,
         };
       }
     }

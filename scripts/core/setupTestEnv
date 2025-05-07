@@ -50,22 +50,22 @@ do
  		done <<< "$line"
 
 		# the rest of the modules are handled in loadModules.ts
-		if [[ $repo_name != "sqlite-plugin" ]] && [[ $repo_name != "core" ]] && [[ $repo_name != "plugin-interface" ]]
+		if [[ $repo_name != "supertokens-sqlite-plugin" ]] && [[ $repo_name != "supertokens-core" ]] && [[ $repo_name != "supertokens-plugin-interface" ]]
 		then
 			continue
 		fi
  		
- 		dir_name=$prefix-$repo_name
+ 		dir_name=$repo_name
 
 		# copy runBuild before building
-		if [[ $repo_name = "core" ]]
+		if [[ $repo_name = "supertokens-core" ]]
 		then
 			cp $utils_path/assets/runBuild-cli $packages_path/$dir_name/cli/runBuild
 			cp $utils_path/assets/runBuild-downloader $packages_path/$dir_name/downloader/runBuild
 			cp $utils_path/assets/runBuild-ee $packages_path/$dir_name/ee/runBuild
 		fi
 
- 		if [[ $repo_name != "sqlite-plugin" ]]
+ 		if [[ $repo_name != "supertokens-sqlite-plugin" ]]
         then
             # build
             echo ""
@@ -154,7 +154,7 @@ do
 				-H 'api-version: 0' | jq '.links' | jq -c '.[]' | while read i; do \
 				wget -P $tmp_path/plugin-interface/ `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
       		fi
- 		elif [[ $repo_name != "sqlite-plugin" ]]
+ 		elif [[ $repo_name != "supertokens-sqlite-plugin" ]]
  		then
  			mkdir $tmp_path/plugin > /dev/null 2>&1
  			cp $packages_path/$dir_name/build/libs/* $tmp_path/plugin

@@ -26,7 +26,7 @@ async function main() {
       console.warn(`Loading module: ${module}`);
 
       const repoPath = getRepoPath(module);
-      const destinationPath = `${PACKAGES_PATH}/${getRepoName(module)}`;
+      const destinationPath = `${PACKAGES_PATH}/${module}`;
 
       console.log(`Cloning module: ${module} (${repoPath} -> ${destinationPath})`);
 
@@ -96,18 +96,9 @@ async function main() {
 // Execute the main function
 main();
 
-const MODULES_TO_SKIP = ['sqlite-plugin', 'core', 'plugin-interface'];
-const MODULE_TO_REPO_NAME_MAP = {
-  node: 'supertokens-node',
-  python: 'supertokens-python',
-  'auth-react': 'supertokens-auth-react',
-  'web-js': 'supertokens-web-js',
-  docs: 'docs',
-  dashboard: 'dashboard',
-  'create-supertokens-app': 'create-supertokens-app',
-};
+const MODULES_TO_SKIP = ['supertokens-sqlite-plugin', 'supertokens-core', 'supertokens-plugin-interface'];
+
 const PACKAGES_PATH = './packages';
-type ModuleName = keyof typeof MODULE_TO_REPO_NAME_MAP;
 
 const prepLine = (line: string) => line.trim();
 
@@ -120,15 +111,13 @@ const isSkippedModule = (line: string) =>
 
 const mapLineToModuleParts = (line: string) => {
   const [module, branch, username] = line.split(',').map((part) => part.trim());
-  return { module, branch, username } as { module: ModuleName; branch: string; username: string };
+  return { module, branch, username } as { module: string; branch: string; username: string };
 };
 
-const getRepoName = (module: ModuleName) => MODULE_TO_REPO_NAME_MAP[module];
-
-const getRepoPath = (module: ModuleName, _username?: string) => {
+const getRepoPath = (module: string, _username?: string) => {
   const basePath = 'git@github.com:';
   const usernamePath = _username ?? 'supertokens';
-  const repoName = getRepoName(module);
+  const repoName = module;
 
   return `${basePath}${usernamePath}/${repoName}.git`;
 };

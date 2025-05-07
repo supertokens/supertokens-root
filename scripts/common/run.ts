@@ -1,101 +1,89 @@
 #!/usr/bin/env ts-node
 
-import { existsSync, mkdirSync, rmSync } from 'fs';
+import { existsSync, mkdirSync, readdirSync, rmSync } from 'fs';
 import {
   validateAppConfig,
-  setupService,
+  setupTarget,
   runService,
-  getAppConfig,
+  getConfig,
   BASE_APP_DIR,
-  BASE_DIR,
   AppConfig,
   getRuntimeSetCommand,
   getRunParams,
+  BASE_PACKAGES_DIR,
+  MODULE_TARGETS,
+  PYTHON_RUNTIME_TARGETS,
+  LIB_TARGETS,
+  SERVICE_TARGETS,
+  withError,
+  logger,
 } from '../../lib';
 import path from 'path';
 import { exec, spawn } from 'child_process';
+// import { generateDockerCompose, startDockerCompose, stopDockerCompose } from './docker-compose';
 
-(async () => {
+withError(async () => {
   const { configPath, script, force } = getRunParams();
 
-  const rawAppConfig = getAppConfig(configPath);
-  const appConfig = validateAppConfig(rawAppConfig);
+  const appConfig = getConfig(configPath, force);
+  const log = logger();
 
-  const appDir = path.join(BASE_APP_DIR, appConfig.name);
-
-  if (!existsSync(appDir)) {
-    mkdirSync(appDir, { recursive: true });
-  }
-
-  if (force) {
-    console.log('Cleaning up app directory because --force was set...');
-    rmSync(appDir, { recursive: true });
-  }
+  // if (appConfig.strategy === 'docker') {
+  //   try {
+  //     await generateDockerCompose(appConfig, appDir);
+  //     await startDockerCompose(appDir);
+  //     return;
+  //   } catch (error) {
+  //     console.error('Failed to start docker containers:', error);
+  //     process.exit(1);
+  //   }
+  // }
 
   const servicesToRun: (AppConfig['services'][number] & { runtimeSetCommand: string; servicePath: string })[] = [];
 
-  try {
-    for await (const service of appConfig.services) {
-      // skip services that already have a service path - they already exist
-      if (!appConfig.template) {
-        throw new Error('App config must contain a template if there is not service path provided');
-      }
+  for await (const service of appConfig.services) {
+    log.warn('Setting up');
 
-      // todo cleanup this
-      if (service.module === 'node') {
-      } else if (service.module === 'auth-react') {
-      } else if (service.module === 'web-js') {
-      } else if (service.module === 'python') {
-      } else if (service.module === 'core') {
-      } else {
-        continue;
-      }
+    const isServiceTarget = SERVICE_TARGETS.includes(service.target as any);
+    const isModuleTarget = MODULE_TARGETS.includes(service.target as any);
+    const isLibTarget = LIB_TARGETS.includes(service.target as any);
 
-      console.warn('Processing service:', service.id);
-
-      // resolve the srcPath
-      if (!service.srcPath) {
-        throw new Error(`Src path is required for service ${service.id}`);
-      }
-
-      const servicePath = path.join(appDir, service.id);
-
-      const runtimeSetCommand = await getRuntimeSetCommand({
-        ...service,
-        servicePath,
-      });
-
-      // reset the service if force is set to true
-      if (!existsSync(servicePath)) {
-        await setupService({
-          ...service,
-          servicePath,
-          srcPath: path.join(BASE_DIR, service.srcPath),
-          runtimeSetCommand,
-          appConfig,
-        });
-      }
-
-      servicesToRun.push({
-        ...service,
-        runtimeSetCommand,
-        servicePath,
-      });
-
-      console.log();
+    if (!isServiceTarget && !isModuleTarget && !isLibTarget) {
+      throw new Error(`Unsupported service target: ${service.target}`);
     }
-  } catch (error) {
-    console.log();
 
-    if (error instanceof Error) {
-      console.error(error.name, error.message);
+    let servicePath: string;
+    if (isLibTarget || isModuleTarget) {
+      servicePath = path.join(BASE_PACKAGES_DIR, service.target);
     } else {
-      console.error(error);
+      // everything else is a service
+      servicePath = path.join(appConfig.appDir, service.id);
     }
 
-    process.exit(1);
+    const runtimeSetCommand = await getRuntimeSetCommand(service);
+
+    await setupTarget({
+      ...service,
+      // @ts-ignore
+      host: service.host!,
+      // @ts-ignore
+      port: service.port!,
+      libs: service.libs || [],
+      config: 'config' in service ? (service.config ?? {}) : {},
+      servicePath,
+      runtimeSetCommand,
+      appConfig,
+    });
+
+    servicesToRun.push({
+      ...service,
+      runtimeSetCommand,
+      servicePath,
+    });
+
+    log.blank();
   }
-  console.log();
+  log.blank();
 
   // Start all startable services
   const serviceProcesses: Array<
@@ -105,18 +93,16 @@ import { exec, spawn } from 'child_process';
     }
   > = [];
 
-  console.log(`Running services with "${script}"...`);
+  log.info(`Running "${script}"`);
+
   for (const service of servicesToRun) {
-    console.log(`Running service: ${service.id} at ${service.servicePath}`);
     const serviceProcess = await runService({
       ...service,
+      appConfig,
       runScript: script,
     });
 
-    if (!serviceProcess) {
-      // console.warn(`Could not find run script for service ${service.id}, skipping...`);
-      continue;
-    }
+    if (!serviceProcess) continue;
 
     serviceProcesses.push({
       ...service,
@@ -126,30 +112,31 @@ import { exec, spawn } from 'child_process';
 
   // Handle cleanup when main process exits
   const cleanup = () => {
-    for (const { process, id, servicePath, module } of serviceProcesses) {
+    for (const { process, id, servicePath, target } of serviceProcesses) {
+      const log = logger(id);
       try {
         process.kill();
-        console.warn(`Stopped service: ${id}`);
+        log.warn(`Stopped service`);
       } catch (err) {
-        console.error(`Failed to stop service: ${id}`, err);
+        log.error(`Failed to stop service`, err);
       }
 
-      if (module === 'python') {
+      if (PYTHON_RUNTIME_TARGETS.includes(target as any)) {
         try {
           if (existsSync(path.join(servicePath, '.venv'))) {
-            console.log(`Deactivating venv for service: ${id}`);
+            log.info(`Deactivating venv`);
 
             // Handle venv deactivation
             exec('deactivate', { cwd: servicePath });
             // @ts-ignore
           } else if (process.env.CONDA_DEFAULT_ENV) {
-            console.log(`Deactivating conda env for service: ${id}`);
+            log.info(`Deactivating conda env`);
 
             // Handle conda deactivation
             exec('conda deactivate', { cwd: servicePath });
           }
         } catch (err) {
-          console.error(`Failed to deactivate Python environment for service: ${id}`, err);
+          log.error(`Failed to deactivate Python environment`, err);
         }
       }
     }
@@ -159,4 +146,4 @@ import { exec, spawn } from 'child_process';
 
   process.on('SIGINT', cleanup);
   process.on('SIGTERM', cleanup);
-})();
+});

@@ -13,51 +13,58 @@
   "strategy": "local",
   "services": [
     {
-      "id": "webjs",
+      "id": "supertokens-web-js",
       "runtime": "node",
       "runtimeVersion": "20.0.0",
-      "module": "web-js",
-      "srcPath": "./packages/supertokens-web-js",
-      "config": {
-        "framework": "angular"
-      },
+      "libs": [
+        "supertokens-web-js"
+      ],
+      "target": "vue",
       "scripts": {
         "start": "npm run start"
       }
     },
     {
-      "id": "papi",
+      "id": "supertokens-python",
       "runtime": "python",
       "runtimeVersion": "3.9",
-      "module": "python",
-      "srcPath": "./packages/supertokens-python",
+      "target": "fastapi",
+      "libs": [
+        "supertokens-python"
+      ],
       "scripts": {
         "start": "python app.py"
       }
     },
     {
-      "id": "core1",
+      "id": "supertokens-core",
       "runtime": "java",
       "runtimeVersion": "15.0.1",
-      "module": "core",
-      "srcPath": "./packages/supertokens-core",
+      "target": "supertokens-core",
       "scripts": {
         "start": "cd ../../../../ && ./scripts/core/start"
+      }
+    },
+    {
+      "id": "create-supertokens-app",
+      "runtime": "node",
+      "runtimeVersion": "20.0.0",
+      "target": "create-supertokens-app",
+      "scripts": {
+        "build": "npm run build-pretty"
       }
     },
     {
       "id": "dashboard",
       "runtime": "node",
       "runtimeVersion": "20.0.0",
-      "module": "dashboard",
-      "srcPath": "./packages/dashboard"
+      "target": "dashboard"
     },
     {
       "id": "docs",
       "runtime": "node",
       "runtimeVersion": "20.0.0",
-      "module": "docs",
-      "srcPath": "./packages/docs"
+      "target": "docs"
     }
   ]
 }

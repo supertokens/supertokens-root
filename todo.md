@@ -9,8 +9,7 @@
   - [x]  authreact
   - [x]  webjs
   - [x]  python
-  - [ ]  docs
-  - [ ]  nestjs
+  - [x]  docs
   - [ ]  backend-apis
 - [ ]  linking
   - [x]  between node packages
@@ -32,5 +31,5 @@
   - [ ]  windows support
   - [x]  have untracked folder for apps
   - [x]  start all apps/services
-  - [ ]  start script to select app to start from filder
+  - [x]  start script to select app to start from filder
     - [x]  allow assigning ports automatically

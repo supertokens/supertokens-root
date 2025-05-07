@@ -12,23 +12,12 @@ git update-index --skip-worktree .idea/runConfigurations/CLI_Main.xml
 git update-index --skip-worktree .idea/compiler.xml
 git update-index --skip-worktree .idea/vcs.xml
 
-prefix=`$utils_path/project-prefix`
-
-url=§
-if [[ $1 = "--ssh" ]]
-then
-  url=git@bitbucket.org:vrai-labs
-fi
-
-if [ $prefix == "supertokens" ]; then
-	url=https://github.com/
-	if [[ $1 = "--ssh" ]]; then
-		url=git@github.com:
-	fi
+url=https://github.com/
+if [[ $1 = "--ssh" ]]; then
+	url=git@github.com:
 fi
 
 cp -r $utils_path/assets/* $packages_path
-
 
 # clear settings.gradle
 > $packages_path/settings.gradle
@@ -65,22 +54,22 @@ do
  		done <<< "$line"
 
 		# the rest of the modules are handled in loadModules.ts
-		if [[ $repo_name != "sqlite-plugin" ]] && [[ $repo_name != "core" ]] && [[ $repo_name != "plugin-interface" ]]
+		if [[ $repo_name != "supertokens-sqlite-plugin" ]] && [[ $repo_name != "supertokens-core" ]] && [[ $repo_name != "supertokens-plugin-interface" ]]
 		then
 			continue
 		fi
 
  		# we now have $repo_name and $branch and $user_name if exists for that repo
 
- 		if [[ $repo_name != "sqlite-plugin" ]]
+ 		if [[ $repo_name != "supertokens-sqlite-plugin" ]]
  		then
-			(cd $packages_path && git clone --branch $branch $url$user_name/$prefix-$repo_name.git)
+			(cd $packages_path && git clone --branch $branch $url$user_name/$repo_name.git)
 
-			cp $utils_path/assets/pre-commit $packages_path/$prefix-$repo_name/.git/hooks/
-			cp $utils_path/assets/addDevTag $packages_path/$prefix-$repo_name/addDevTag
-			cp $utils_path/assets/addReleaseTag $packages_path/$prefix-$repo_name/addReleaseTag
+			cp $utils_path/assets/pre-commit $packages_path/$repo_name/.git/hooks/
+			cp $utils_path/assets/addDevTag $packages_path/$repo_name/addDevTag
+			cp $utils_path/assets/addReleaseTag $packages_path/$repo_name/addReleaseTag
 
-			echo "include '$prefix-$repo_name'" >> $packages_path/settings.gradle
+			echo "include '$repo_name'" >> $packages_path/settings.gradle
 		fi
   	fi
 done

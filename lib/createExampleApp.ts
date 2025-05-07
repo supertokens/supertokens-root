@@ -1,41 +1,18 @@
 import { exec } from 'child_process';
 import path from 'path';
 import { RecipeConfig } from './types';
+import { ServiceTarget } from './constants';
 
 export const createExampleApp = async (
   params: {
-    frontendFramework:
-      | 'react'
-      | 'angular'
-      | 'vue'
-      | 'solid'
-      // fullstack frameworks
-      | 'astro'
-      | 'nuxt'
-      | 'sveltekit'
-      | 'astro-react'
-      | 'next'
-      | 'next-multitenancy'
-      | 'next-app-dir-multitenancy'
-      | 'remix'
-      | 'nuxt';
+    frontendFramework: ServiceTarget.React | ServiceTarget.Angular | ServiceTarget.Vue | ServiceTarget.Solid;
     backendFramework:
-      | 'express'
-      | 'koa'
-      | 'nest'
-      | 'fastapi'
-      | 'flask'
-      | 'django'
-      // fullstack frameworks
-      | 'astro'
-      | 'nuxt'
-      | 'sveltekit'
-      | 'astro-react'
-      | 'next'
-      | 'next-multitenancy'
-      | 'next-app-dir-multitenancy'
-      | 'remix'
-      | 'nuxt';
+      | ServiceTarget.Express
+      | ServiceTarget.Nest
+      | ServiceTarget.Koa
+      | ServiceTarget.FastAPI
+      | ServiceTarget.Flask
+      | ServiceTarget.Django;
     apiHost: string;
     clientHost: string;
     apiPort: number;

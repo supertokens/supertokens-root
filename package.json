@@ -4,9 +4,11 @@
   "description": "![SuperTokens banner](https://raw.githubusercontent.com/supertokens/supertokens-logo/master/images/Artboard%20%E2%80%93%2027%402x.png)",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "./scripts/common/run.ts ./app.json test",
     "start-clean": "./scripts/common/run.ts ./app.json start --force",
-    "start": "./scripts/common/run.ts ./app.json start"
+    "start": "./scripts/common/run.ts ./app.json start",
+    "build": "./scripts/common/run.ts ./app.json build",
+    "load": "./scripts/common/loadModules.ts && ./scripts/core/loadModules"
   },
   "repository": {
     "type": "git",

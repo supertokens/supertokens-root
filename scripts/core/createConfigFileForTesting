@@ -27,12 +27,12 @@ do
  		done <<< "$line"
 
 		# the rest of the modules are handled in loadModules.ts
-		if [[ $repo_name != "sqlite-plugin" ]] && [[ $repo_name != "core" ]] && [[ $repo_name != "plugin-interface" ]]
+		if [[ $repo_name != "supertokens-sqlite-plugin" ]] && [[ $repo_name != "supertokens-core" ]] && [[ $repo_name != "supertokens-plugin-interface" ]]
 		then
 			continue
 		fi
  		
- 		dir_name=$prefix-$repo_name
+ 		dir_name=$repo_name
  		
  		# populate config file
  		

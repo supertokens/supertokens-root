@@ -67,7 +67,6 @@ const getRuntimeManagers = async () => {
 const getNodeRuntimeSetCommand = async ({
   runtimeVersion,
 }: {
-  servicePath: string;
   runtimeVersion: string;
   id: string;
 }): Promise<string> => {
@@ -88,18 +87,14 @@ const getNodeRuntimeSetCommand = async ({
 };
 
 const getPythonRuntimeSetCommand = async ({
-  servicePath,
   runtimeVersion,
   id,
 }: {
-  servicePath: string;
   runtimeVersion: string;
   id: string;
 }): Promise<string> => {
   // Check if python is installed
   const { isUsingAnaconda, isUsingMise } = await getRuntimeManagers();
-
-  console.log(`Setting Python version to ${runtimeVersion} in "${servicePath}"`);
 
   let command = '';
   if (isUsingMise) {
@@ -117,18 +112,16 @@ const getPythonRuntimeSetCommand = async ({
 export const getRuntimeSetCommand = async ({
   runtime,
   runtimeVersion,
-  servicePath,
   id,
 }: {
   id: string;
   runtime: string;
   runtimeVersion: string;
-  servicePath: string;
 }): Promise<string> => {
   if (runtime === 'node') {
-    return await getNodeRuntimeSetCommand({ servicePath, runtimeVersion, id });
+    return await getNodeRuntimeSetCommand({ runtimeVersion, id });
   } else if (runtime === 'python') {
-    return await getPythonRuntimeSetCommand({ servicePath, runtimeVersion, id });
+    return await getPythonRuntimeSetCommand({ runtimeVersion, id });
   } else if (runtime === 'java') {
     return '';
   } else {
