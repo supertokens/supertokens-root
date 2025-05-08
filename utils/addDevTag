@@ -101,6 +101,9 @@ then
 	commit_hash=`git log --pretty=format:'%H' -n 1`
 fi
 
+# delete the dev tag if it exists
+git push --delete origin dev-v$version || true
+
 # tag this commit and push it------------
 
 git tag dev-v$version $commit_hash
