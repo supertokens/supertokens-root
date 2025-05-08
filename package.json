@@ -1,0 +1,33 @@
+{
+  "name": "supertokens-root",
+  "version": "1.0.0",
+  "description": "![SuperTokens banner](https://raw.githubusercontent.com/supertokens/supertokens-logo/master/images/Artboard%20%E2%80%93%2027%402x.png)",
+  "main": "index.js",
+  "scripts": {
+    "test": "./scripts/common/run.ts ./app.json test",
+    "start-clean": "./scripts/common/run.ts ./app.json start --force",
+    "start": "./scripts/common/run.ts ./app.json start",
+    "build": "./scripts/common/run.ts ./app.json build",
+    "load": "./scripts/common/loadModules.ts --force"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/supertokens/supertokens-root.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/supertokens/supertokens-root/issues"
+  },
+  "homepage": "https://github.com/supertokens/supertokens-root#readme",
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "chalk": "^5.4.1",
+    "prettier": "3.5.3",
+    "simple-git": "^3.27.0",
+    "ts-node": "^10.9.2",
+    "tslib": "^2.8.1",
+    "typescript": "^5.8.3",
+    "zod": "^3.24.2"
+  }
+}

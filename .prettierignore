@@ -1,0 +1,10 @@
+# Ignore artifacts:
+build
+coverage
+node_modules
+packages
+
+.tmp
+.gradle
+.idea
+.vscode

@@ -1,0 +1,58 @@
+#!/bin/bash
+
+utils_path="./scripts/core"
+packages_path="./packages"
+prefix=`$utils_path/project-prefix`
+tmp_path=".tmp/supertokens-core"
+touch $tmp_path/config_temp.yaml
+
+
+# add new line char at the end in case it's not there for looping
+echo  >> ./modules.txt
+
+# looping
+cat ./modules.txt | while read line
+do
+	if [[ ! -z "$line" ]] && [[ $line != //* ]]
+	then
+		while IFS=',' read -ra ADDR; do
+			counter=0
+      		for i in "${ADDR[@]}"; do
+      			if [ $counter == 0 ]
+      			then
+      				repo_name="$i"
+          		fi
+          		counter=$(($counter+1))
+      		done
+ 		done <<< "$line"
+
+		# the rest of the modules are handled in loadModules.ts
+		if [[ $repo_name != "supertokens-sqlite-plugin" ]] && [[ $repo_name != "supertokens-core" ]] && [[ $repo_name != "supertokens-plugin-interface" ]]
+		then
+			continue
+		fi
+ 		
+ 		dir_name=$repo_name
+ 		
+ 		# populate config file
+ 		
+ 		if [[ $dir_name = *"-core" ]]
+ 		then
+ 			cat $packages_path/$dir_name/devConfig.yaml >> $tmp_path/config_temp.yaml
+ 			echo "" >> $tmp_path/config_temp.yaml
+ 			echo "" >> $tmp_path/config_temp.yaml
+ 		elif [[ $dir_name = *"-plugin-interface" ]]
+ 		then
+ 			continue=1
+ 		elif [[ $repo_name != "sqlite-plugin" ]]
+        then
+ 			cat $packages_path/$dir_name/devConfig.yaml >> $tmp_path/config_temp.yaml
+ 			`echo ""` >> $tmp_path/config_temp.yaml
+ 		fi
+   	fi
+done
+
+# remove new line char from end for next use of this script
+printf %s "$(< ./modules.txt)" > ./modules.txt
+
+mv $tmp_path/config_temp.yaml $tmp_path/config.yaml

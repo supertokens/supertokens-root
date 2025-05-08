@@ -2,6 +2,8 @@
 .gradle
 build/
 
+node_modules/
+
 # Ignore Gradle GUI config
 gradle-app.setting
 
@@ -13,6 +15,7 @@ gradle-app.setting
 *.war
 *.ear
 *.class
+mise.toml
 
 # eclipse specific git ignore
 *.pydevproject
@@ -48,6 +51,7 @@ ent-*
 .DS_Store
 
 #testing while in dev
+/packages
 /core/
 /plugin-interface/
 /plugin/
@@ -169,3 +173,5 @@ fabric.properties
 .idea/GitScope.xml
 
 # End of https://www.gitignore.io/api/intellij
+
+app.json

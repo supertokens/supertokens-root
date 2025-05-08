@@ -3,6 +3,7 @@
 usage="Usage: cleanTestEnv [--help] [ [--cicd] | [--local] ] [--silent]"
 cicd=false
 silent=false
+tmp_path=".tmp/supertokens-core"
 
 # Based on https://stackoverflow.com/a/33826763/11827673
 while [[ "$#" -gt 0 ]]; do
@@ -16,16 +17,17 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
-rm -rf core
-rm -rf plugin-interface
-rm -rf plugin
-rm -rf cli
-rm -rf downloader
-rm -rf ee
-rm version.yaml
-rm -rf temp
-rm install
-rm install.bat
-rm LICENSE.md
-rm .testEnvRunning
+rm -rf $tmp_path/core
+rm -rf $tmp_path/plugin-interface
+rm -rf $tmp_path/plugin
+rm -rf $tmp_path/cli
+rm -rf $tmp_path/downloader
+rm -rf $tmp_path/ee
+rm -rf $tmp_path/version.yaml
+rm -rf $tmp_path/config.yaml
+rm -rf $tmp_path/install
+rm -rf $tmp_path/install.bat
+rm -rf $tmp_path/LICENSE.md
+rm -rf $tmp_path/.testEnvRunning
+
 [[ $silent = false ]] && echo "Testing environment destroyed."

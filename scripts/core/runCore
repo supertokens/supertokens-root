@@ -1,0 +1,22 @@
+#!/bin/bash
+
+tmp_path=".tmp/supertokens-core"
+
+if [ ! -f $tmp_path/.testEnvRunning ]
+then
+    echo -e "\x1b[31m\nPlease execute \x1b[1;3m./scripts/core/startTestEnv --wait \x1b[0m\x1b[31mand run this script again\x1b[0m\n"
+    exit 1;
+fi
+
+classpath="$tmp_path/core/*:$tmp_path/plugin-interface/*:$tmp_path/ee/*"
+
+if which cygpath > /dev/null; then # Convert path to Windows-style if using Git Bash
+  classpath="$(cygpath -C ANSI -w -p "${classpath}")"
+fi
+
+port="port=$1"
+if [ -z "$1" ]; then
+  port=""
+fi
+
+java -classpath "${classpath}" io.supertokens.Main $tmp_path DEV $port

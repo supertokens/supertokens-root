@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Start test environment in the background and capture its output
+./scripts/core/startTestEnv --wait | while read line; do
+    echo "$line"
+    if [[ "$line" == *"Test environment started! Leave this script running while running tests."* ]]; then
+        # Once we see the message, run the core
+        ./scripts/core/runCore
+    fi
+done

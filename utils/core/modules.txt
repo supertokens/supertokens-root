@@ -1,0 +1,4 @@
+// put module name like <module name>,<branch name>,<github username>(if contributing with a forked repository) and then call ./loadModules script
+core,master
+plugin-interface,master
+sqlite-plugin,master

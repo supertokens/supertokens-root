@@ -7,6 +7,7 @@ case "${dpkgArch##*-}" in
     *) OS='linux';;
 esac
 
+tmp_path=".tmp/supertokens-core"
 ## fetching the appropriate jre from github
 curl -o jre.zip -s -X GET \
 	"https://raw.githubusercontent.com/supertokens/jre/master/jre-15.0.1-${OS}.zip"
@@ -26,14 +27,14 @@ unzip jre.zip && mv jre-* jre && rm -rf jre.zip
 rm -rf __MACOSX
 
 ## copying all the necessary files and folders
-cp -r ../core core
-cp -r ../cli cli
-cp -r ../downloader downloader
-cp -r ../ee ee
-cp -r ../plugin-interface plugin-interface
-cp -r ../plugin plugin
-cp -r ../install ./
-cp -r ../version.yaml ./
+cp -r ../$tmp_path/core core
+cp -r ../$tmp_path/cli cli
+cp -r ../$tmp_path/downloader downloader
+cp -r ../$tmp_path/ee ee
+cp -r ../$tmp_path/plugin-interface plugin-interface
+cp -r ../$tmp_path/plugin plugin
+cp -r ../$tmp_path/install ./
+cp -r ../$tmp_path/version.yaml ./
 
 ## building the docker image
 docker build -t supertokens-postgresql-testing .
