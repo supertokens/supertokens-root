@@ -103,6 +103,7 @@ fi
 
 # delete the dev tag if it exists
 git push --delete origin dev-v$version || true
+git tag -d dev-v$version || true
 
 # tag this commit and push it------------
 
