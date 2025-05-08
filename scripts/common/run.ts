@@ -18,24 +18,12 @@ import {
 } from '../../lib';
 import path from 'path';
 import { exec, spawn } from 'child_process';
-// import { generateDockerCompose, startDockerCompose, stopDockerCompose } from './docker-compose';
 
 withError(async () => {
   const { configPath, script, force } = getRunParams();
 
   const appConfig = getConfig(configPath, force);
   const log = logger();
-
-  // if (appConfig.strategy === 'docker') {
-  //   try {
-  //     await generateDockerCompose(appConfig, appDir);
-  //     await startDockerCompose(appDir);
-  //     return;
-  //   } catch (error) {
-  //     console.error('Failed to start docker containers:', error);
-  //     process.exit(1);
-  //   }
-  // }
 
   const itemsToRun: (AppConfig['items'][number] & {
     runtimeSetCommand: string;

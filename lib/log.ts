@@ -5,6 +5,12 @@ const colors = [
   '\x1b[34m', // blue
   '\x1b[35m', // magenta
   '\x1b[36m', // cyan
+  '\x1b[91m', // Light Red
+  '\x1b[92m', // Light Green
+  '\x1b[93m', // Light Yellow
+  '\x1b[94m', // Light Blue
+  '\x1b[95m', // Light Magenta
+  '\x1b[96m', // Light Cyan
 ];
 
 const colorReset = '\x1b[0m';
@@ -24,8 +30,6 @@ const getColor = (id?: string) => {
 
   let color = colorReset;
   if (possibleColors.length) color = possibleColors[0];
-
-  console.warn('No more colors available for logging. Using default color.');
 
   usedColors[id] = color;
 

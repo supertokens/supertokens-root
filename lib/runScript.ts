@@ -1,6 +1,4 @@
-import { existsSync } from 'fs';
-import path from 'path';
-import { exec, spawn } from 'child_process';
+import { exec } from 'child_process';
 import { AppConfig } from './validateAppConfig';
 import { logger } from './log';
 

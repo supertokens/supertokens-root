@@ -1,0 +1,11 @@
+// put module name like <module name>,<branch name>,<github username>(if contributing with a forked repository) and then call ./loadModules script
+supertokens-core,master
+supertokens-plugin-interface,master
+supertokens-sqlite-plugin,master
+supertokens-node,20.1
+supertokens-python,master
+supertokens-auth-react,master
+supertokens-web-js,master
+docs,master
+dashboard,master
+create-supertokens-app,master
