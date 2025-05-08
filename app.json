@@ -11,11 +11,9 @@
     ]
   },
   "strategy": "local",
-  "services": [
+  "items": [
     {
       "id": "supertokens-web-js",
-      "runtime": "node",
-      "runtimeVersion": "20.0.0",
       "libs": [
         "supertokens-web-js"
       ],
@@ -26,8 +24,6 @@
     },
     {
       "id": "supertokens-python",
-      "runtime": "python",
-      "runtimeVersion": "3.9",
       "target": "fastapi",
       "libs": [
         "supertokens-python"
@@ -38,17 +34,13 @@
     },
     {
       "id": "supertokens-core",
-      "runtime": "java",
-      "runtimeVersion": "15.0.1",
       "target": "supertokens-core",
       "scripts": {
-        "start": "cd ../../../../ && ./scripts/core/start"
+        "start": "cd ../../ && ./scripts/core/startTestEnv --wait | while read line; do echo \"$line\"; [[ \"$line\" == *\"Test environment started! Leave this script running while running tests.\"* ]] && ./scripts/core/runCore $ST_PORT; done"
       }
     },
     {
       "id": "create-supertokens-app",
-      "runtime": "node",
-      "runtimeVersion": "20.0.0",
       "target": "create-supertokens-app",
       "scripts": {
         "build": "npm run build-pretty"
@@ -56,15 +48,17 @@
     },
     {
       "id": "dashboard",
-      "runtime": "node",
-      "runtimeVersion": "20.0.0",
-      "target": "dashboard"
+      "target": "dashboard",
+      "scripts": {
+        "start": "export PORT=$ST_PORT && npm run start-bundle-server"
+      }
     },
     {
       "id": "docs",
-      "runtime": "node",
-      "runtimeVersion": "20.0.0",
-      "target": "docs"
+      "target": "docs",
+      "scripts": {
+        "start": "npm run start -- --port $ST_PORT"
+      }
     }
   ]
 }

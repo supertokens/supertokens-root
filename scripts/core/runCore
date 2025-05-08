@@ -14,4 +14,9 @@ if which cygpath > /dev/null; then # Convert path to Windows-style if using Git 
   classpath="$(cygpath -C ANSI -w -p "${classpath}")"
 fi
 
-java -classpath "${classpath}" io.supertokens.Main $tmp_path DEV
+port="port=$1"
+if [ -z "$1" ]; then
+  port=""
+fi
+
+java -classpath "${classpath}" io.supertokens.Main $tmp_path DEV $port

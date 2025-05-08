@@ -2,7 +2,7 @@ export * from './createExampleApp';
 export * from './setupSdkService';
 export * from './validateAppConfig';
 export * from './setRuntimeVersion';
-export * from './runService';
+export * from './runScript';
 export * from './getConfig';
 export * from './constants';
 export * from './getRunParams';

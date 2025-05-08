@@ -5,7 +5,7 @@ export const withError = async (fn: () => Promise<any>) => {
     console.log();
 
     if (error instanceof Error) {
-      console.error(error.name, error.message);
+      console.error(error.name, error.message, error.stack);
     } else {
       console.error(error);
     }

@@ -1,7 +1,7 @@
 import fs, { readSync } from 'fs';
 import { z } from 'zod';
 import { getModules } from './getModules';
-import { BACKEND_TARGETS, FRONTEND_TARGETS, LIB_TARGETS, MODULE_TARGETS, ServiceTarget } from './constants';
+import { BACKEND_TARGETS, FRONTEND_TARGETS, LIB_TARGETS, MODULE_TARGETS, ItemTarget } from './constants';
 
 const allowedModules = getModules();
 
@@ -18,6 +18,34 @@ const runtimeModules = {
   python: ['python'],
   golang: ['golang'],
 };
+
+const runtimeDefaultVersions = {
+  java: '15.0.1',
+  node: '18',
+  python: '3.8',
+  golang: '1.18',
+} as const;
+
+const targetRuntimes = {
+  [ItemTarget.Flask]: 'python',
+  [ItemTarget.FastAPI]: 'python',
+  [ItemTarget.Django]: 'python',
+  [ItemTarget.Express]: 'node',
+  [ItemTarget.Koa]: 'node',
+  [ItemTarget.Nest]: 'node',
+  [ItemTarget.React]: 'node',
+  [ItemTarget.Solid]: 'node',
+  [ItemTarget.Vue]: 'node',
+  [ItemTarget.Angular]: 'node',
+  [ItemTarget.SupertokensCore]: 'java',
+  [ItemTarget.SupertokensPython]: 'python',
+  [ItemTarget.SupertokensWebJs]: 'node',
+  [ItemTarget.SupertokensNode]: 'node',
+  [ItemTarget.SupertokensAuthReact]: 'node',
+  [ItemTarget.SupertokensCreateApp]: 'node',
+  [ItemTarget.Docs]: 'node',
+  [ItemTarget.Dashboard]: 'node',
+} as const;
 
 const portInterval = [3000, 6000];
 
@@ -63,21 +91,22 @@ export const AppConfigSchema = z
         'Defines the template for how the SDKs will be configured in the apps. It matches the inputs from the create-supertokens-app command.',
       ),
 
-    services: z
+    items: z
       .array(
         z
           .object({
             id: z.string(),
             libs: z.array(z.enum(allowedModules.map((module) => module.name) as [string, ...string[]])).optional(),
-            runtime: z.enum(['java', 'node', 'python']),
+            runtime: z.enum(['java', 'node', 'python']).optional(),
             runtimeVersion: z
               .string()
-              .describe('The version of the runtime to use for the service. It will be automatically set.'),
+              .optional()
+              .describe('The version of the runtime to use for the item. It will be automatically set.'),
             scripts: z
               .record(z.string(), z.string())
               .optional()
               .describe(
-                'The scripts that the service will have available to run. The key is the name of the script and the value is the command to run the script. A start and a build script should be provided, though they are not mandatory.',
+                'The scripts that the item will have available to run. The key is the name of the script and the value is the command to run the script. A start and a build script should be provided, though they are not mandatory.',
               ),
           })
           .and(
@@ -174,26 +203,26 @@ export const AppConfigSchema = z
       )
       .min(1)
       .refine(
-        (services) => {
-          const serviceIds = services.map((service) => service.id);
-          return new Set(serviceIds).size === serviceIds.length;
+        (items) => {
+          const itemIds = items.map((item) => item.id);
+          return new Set(itemIds).size === itemIds.length;
         },
         {
-          message: 'Service IDs must be unique',
+          message: 'Item IDs must be unique',
         },
       ),
   })
   .transform((appConfig) => {
-    const coreServices = appConfig.services.filter((service) => service.target === ServiceTarget.SupertokensCore);
+    const coreServices = appConfig.items.filter((item) => item.target === ItemTarget.SupertokensCore);
 
-    const backendServices = appConfig.services.filter((service) =>
-      (BACKEND_TARGETS as unknown as string[]).includes(service.target),
+    const backendServices = appConfig.items.filter((item) =>
+      (BACKEND_TARGETS as unknown as string[]).includes(item.target),
     );
-    const frontendServices = appConfig.services.filter((service) =>
-      (FRONTEND_TARGETS as unknown as string[]).includes(service.target),
+    const frontendServices = appConfig.items.filter((item) =>
+      (FRONTEND_TARGETS as unknown as string[]).includes(item.target),
     );
-    const docsServices = appConfig.services.filter((service) => service.target === ServiceTarget.Docs);
-    const dashboardServices = appConfig.services.filter((service) => service.target === ServiceTarget.Dashboard);
+    const docsServices = appConfig.items.filter((item) => item.target === ItemTarget.Docs);
+    const dashboardServices = appConfig.items.filter((item) => item.target === ItemTarget.Dashboard);
 
     let baseSdkServiceConfig = {};
     if (coreServices.length === 1) {
@@ -252,26 +281,51 @@ export const AppConfigSchema = z
     }
 
     // mutations are bad, but it would be complicated to do this without mutating the original appConfig
-    for (let index = 0; index < appConfig.services.length; index += 1) {
-      if (BACKEND_TARGETS.includes(appConfig.services[index].target as any)) {
-        (appConfig.services[index] as any).config = {
+    for (let index = 0; index < appConfig.items.length; index += 1) {
+      if (BACKEND_TARGETS.includes(appConfig.items[index].target as any)) {
+        (appConfig.items[index] as any).config = {
           ...baseSdkServiceConfig,
-          ...(appConfig.services[index] as any).config,
+          ...(appConfig.items[index] as any).config,
         };
       }
 
-      if (FRONTEND_TARGETS.includes(appConfig.services[index].target as any)) {
-        (appConfig.services[index] as any).config = {
+      if (FRONTEND_TARGETS.includes(appConfig.items[index].target as any)) {
+        (appConfig.items[index] as any).config = {
           ...baseClientServiceConfig,
-          ...(appConfig.services[index] as any).config,
+          ...(appConfig.items[index] as any).config,
         };
+      }
+
+      if (!appConfig.items[index].runtime) {
+        const targetRuntime = targetRuntimes[appConfig.items[index].target];
+        if (!targetRuntime) {
+          throw new Error(
+            `No runtime found for target: ${appConfig.items[index].target}. Please set the runtime manually.`,
+          );
+        }
+        appConfig.items[index].runtime = targetRuntime;
+      }
+
+      if (!appConfig.items[index].runtimeVersion) {
+        const targetRuntimeVersion = runtimeDefaultVersions[appConfig.items[index].runtime!];
+        if (!targetRuntimeVersion) {
+          throw new Error(
+            `No runtime version found for runtime: ${appConfig.items[index].runtime}. Please set the runtime version manually.`,
+          );
+        }
+        appConfig.items[index].runtimeVersion = targetRuntimeVersion;
       }
     }
 
     return appConfig;
   });
 
-export type AppConfig = z.infer<typeof AppConfigSchema>;
+export type AppConfig = z.infer<typeof AppConfigSchema> & {
+  items: (z.infer<typeof AppConfigSchema>['items'][number] & {
+    runtime: string;
+    runtimeVersion: string;
+  })[];
+};
 
 export const validateAppConfig = (appConfig: AppConfig) => {
   const result = AppConfigSchema.safeParse(appConfig);
@@ -284,5 +338,5 @@ export const validateAppConfig = (appConfig: AppConfig) => {
     throw new Error(`Invalid app config\n${messages.join('\n')}`);
   }
 
-  return result.data;
+  return result.data as AppConfig;
 };

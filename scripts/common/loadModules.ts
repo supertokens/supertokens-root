@@ -3,102 +3,11 @@
 import { exec } from 'child_process';
 import * as fs from 'fs/promises';
 import { simpleGit as git, CloneOptions } from 'simple-git';
-
-async function main() {
-  try {
-    console.log();
-    console.log(`Loading modules...`);
-
-    let modulesProcessed = 0;
-
-    const modulesFile = await fs.readFile('modules.txt', 'utf8');
-    const lines = modulesFile.split('\n');
-
-    console.log(`--------------------------------`);
-    for await (const l of lines) {
-      const line = prepLine(l);
-      if (isEmpty(line)) continue;
-      if (isComment(line)) continue;
-      if (isSkippedModule(line)) continue;
-
-      const { module, branch, username } = mapLineToModuleParts(line);
-
-      console.warn(`Loading module: ${module}`);
-
-      const repoPath = getRepoPath(module);
-      const destinationPath = `${PACKAGES_PATH}/${module}`;
-
-      console.log(`Cloning module: ${module} (${repoPath} -> ${destinationPath})`);
-
-      try {
-        await git().clone(repoPath, destinationPath, {
-          '--branch': branch,
-          '--no-tags': null,
-        } as CloneOptions);
-      } catch (error) {
-        if (error instanceof Error) {
-          console.error('Error module:', error.message);
-        } else {
-          console.error('Error module:', error);
-        }
-        console.log(`--------------------------------`);
-        continue;
-      }
-
-      // Process the module info
-
-      if (username) {
-        console.log(`Using fork from user: ${username}`);
-      }
-
-      if (
-        module === 'node' ||
-        module === 'auth-react' ||
-        module === 'dashboard' ||
-        module === 'create-supertokens-app' ||
-        module === 'docs'
-      ) {
-        console.log(`Installing dependencies for ${module}...`);
-        try {
-          await new Promise<void>((resolve, reject) => {
-            exec(
-              'npm install',
-              {
-                cwd: destinationPath,
-              },
-              (error) => {
-                if (error) {
-                  reject(error);
-                  return;
-                }
-                resolve();
-              },
-            );
-          });
-          console.log(`Successfully installed dependencies for ${module}`);
-        } catch (error) {
-          console.error(`Failed to install dependencies for ${module}:`, error);
-        }
-      }
-      modulesProcessed += 1;
-
-      console.log(``);
-      console.log(`--------------------------------`);
-    }
-
-    console.log(`Loaded ${modulesProcessed} modules`);
-  } catch (error) {
-    console.error('Error processing modules:', error);
-    process.exit(1);
-  }
-}
-
-// Execute the main function
-main();
-
-const MODULES_TO_SKIP = ['supertokens-sqlite-plugin', 'supertokens-core', 'supertokens-plugin-interface'];
+import { logger } from '../../lib';
+import { appendFileSync, cpSync, existsSync, rmSync, writeFileSync } from 'fs';
 
 const PACKAGES_PATH = './packages';
+const MODULES_TO_SKIP = ['supertokens-sqlite-plugin'];
 
 const prepLine = (line: string) => line.trim();
 
@@ -121,3 +30,132 @@ const getRepoPath = (module: string, _username?: string) => {
 
   return `${basePath}${usernamePath}/${repoName}.git`;
 };
+
+const force = process.argv.includes('--force');
+async function main() {
+  const log = logger();
+
+  try {
+    if (!force && existsSync(`${PACKAGES_PATH}`)) {
+      throw new Error(
+        `${PACKAGES_PATH} already exists. Please remove it before running the script or use --force flag`,
+      );
+    } else if (force) {
+      log.info(`Removing ${PACKAGES_PATH}...`);
+      rmSync(`${PACKAGES_PATH}`, { recursive: true, force: true });
+    }
+
+    log.info(`Loading modules...`);
+
+    let modulesProcessed = 0;
+
+    const modulesFile = await fs.readFile('modules.txt', 'utf8');
+    const lines = modulesFile.split('\n');
+
+    log.line();
+    for await (const l of lines) {
+      const line = prepLine(l);
+      if (isEmpty(line)) continue;
+      if (isComment(line)) continue;
+      if (isSkippedModule(line)) continue;
+
+      const { module, branch, username } = mapLineToModuleParts(line);
+
+      const log = logger(module);
+
+      log.warn(`Loading module`);
+
+      const repoPath = getRepoPath(module);
+      const destinationPath = `${PACKAGES_PATH}/${module}`;
+
+      log.info(`Cloning module "${repoPath}" -> "${destinationPath}"`);
+
+      try {
+        await git().clone(repoPath, destinationPath, {
+          '--branch': branch,
+          '--no-tags': null,
+        } as CloneOptions);
+      } catch (error) {
+        if (error instanceof Error) {
+          log.error(error.message);
+        } else {
+          log.error(error);
+        }
+        log.line();
+        continue;
+      }
+
+      // Process the module info
+      if (username) {
+        log.info(`Using fork from user "${username}"`);
+      }
+
+      if (module === 'supertokens-core') {
+        log.info(`Setting up`);
+
+        if (existsSync(`${PACKAGES_PATH}/settings.gradle`)) {
+          rmSync(`${PACKAGES_PATH}/settings.gradle`);
+        }
+
+        cpSync('./scripts/core/assets', PACKAGES_PATH, { recursive: true });
+
+        writeFileSync(
+          `${PACKAGES_PATH}/settings.gradle`,
+          `include 'supertokens-core:cli'\ninclude 'supertokens-core:downloader'\ninclude 'supertokens-core:ee'\n`,
+        );
+      }
+
+      if (module === 'supertokens-plugin-interface' || module === 'supertokens-core') {
+        cpSync('./scripts/core/assets/pre-commit', `${PACKAGES_PATH}/${module}/.git/hooks/pre-commit`, {
+          recursive: true,
+        });
+        cpSync('./scripts/core/assets/addDevTag', `${PACKAGES_PATH}/${module}/addDevTag`, { recursive: true });
+        cpSync('./scripts/core/assets/addReleaseTag', `${PACKAGES_PATH}/${module}/addReleaseTag`, { recursive: true });
+
+        appendFileSync(`${PACKAGES_PATH}/settings.gradle`, `include '${module}'\n`);
+      }
+
+      if (
+        module === 'supertokens-node' ||
+        module === 'supertokens-auth-react' ||
+        module === 'create-supertokens-app' ||
+        module === 'dashboard' ||
+        module === 'docs'
+      ) {
+        log.info(`Setting up`);
+        try {
+          await new Promise<void>((resolve, reject) => {
+            exec(
+              'npm install',
+              {
+                cwd: destinationPath,
+              },
+              (error) => {
+                if (error) {
+                  reject(error);
+                  return;
+                }
+                resolve();
+              },
+            );
+          });
+          log.info(`Successfully installed dependencies`);
+        } catch (error) {
+          log.error('Failed to install dependencies');
+          log.error(error);
+        }
+      }
+      modulesProcessed += 1;
+
+      log.line();
+    }
+
+    log.info(`Loaded ${modulesProcessed} modules`);
+  } catch (error) {
+    log.error('Error processing modules');
+    log.error(error);
+    process.exit(1);
+  }
+}
+
+main();

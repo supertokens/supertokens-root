@@ -1,12 +1,10 @@
 #!/usr/bin/env ts-node
 
-import { existsSync, mkdirSync, readdirSync, rmSync } from 'fs';
+import { existsSync } from 'fs';
 import {
-  validateAppConfig,
   setupTarget,
-  runService,
+  runScript,
   getConfig,
-  BASE_APP_DIR,
   AppConfig,
   getRuntimeSetCommand,
   getRunParams,
@@ -39,9 +37,13 @@ withError(async () => {
   //   }
   // }
 
-  const servicesToRun: (AppConfig['services'][number] & { runtimeSetCommand: string; servicePath: string })[] = [];
+  const itemsToRun: (AppConfig['items'][number] & {
+    runtimeSetCommand: string;
+    servicePath: string;
+    process?: ReturnType<typeof spawn>;
+  })[] = [];
 
-  for await (const service of appConfig.services) {
+  for await (const service of appConfig.items) {
     log.warn('Setting up');
 
     const isServiceTarget = SERVICE_TARGETS.includes(service.target as any);
@@ -56,7 +58,6 @@ withError(async () => {
     if (isLibTarget || isModuleTarget) {
       servicePath = path.join(BASE_PACKAGES_DIR, service.target);
     } else {
-      // everything else is a service
       servicePath = path.join(appConfig.appDir, service.id);
     }
 
@@ -69,13 +70,15 @@ withError(async () => {
       // @ts-ignore
       port: service.port!,
       libs: service.libs || [],
-      config: 'config' in service ? (service.config ?? {}) : {},
+      // @ts-ignore
+      config: service.config || {},
       servicePath,
       runtimeSetCommand,
       appConfig,
+      force,
     });
 
-    servicesToRun.push({
+    itemsToRun.push({
       ...service,
       runtimeSetCommand,
       servicePath,
@@ -85,55 +88,42 @@ withError(async () => {
   }
   log.blank();
 
-  // Start all startable services
-  const serviceProcesses: Array<
-    AppConfig['services'][number] & {
-      process: ReturnType<typeof spawn>;
-      servicePath: string;
-    }
-  > = [];
-
   log.info(`Running "${script}"`);
 
-  for (const service of servicesToRun) {
-    const serviceProcess = await runService({
-      ...service,
+  for (const item of itemsToRun) {
+    item.process = await runScript({
+      ...item,
       appConfig,
       runScript: script,
-    });
-
-    if (!serviceProcess) continue;
-
-    serviceProcesses.push({
-      ...service,
-      process: serviceProcess,
     });
   }
 
   // Handle cleanup when main process exits
   const cleanup = () => {
-    for (const { process, id, servicePath, target } of serviceProcesses) {
-      const log = logger(id);
+    for (const item of itemsToRun) {
+      if (!item.process) continue;
+
+      const log = logger(item.id);
       try {
-        process.kill();
+        item.process?.kill();
         log.warn(`Stopped service`);
       } catch (err) {
         log.error(`Failed to stop service`, err);
       }
 
-      if (PYTHON_RUNTIME_TARGETS.includes(target as any)) {
+      if (PYTHON_RUNTIME_TARGETS.includes(item.target as any)) {
         try {
-          if (existsSync(path.join(servicePath, '.venv'))) {
+          if (existsSync(path.join(item.servicePath, '.venv'))) {
             log.info(`Deactivating venv`);
 
             // Handle venv deactivation
-            exec('deactivate', { cwd: servicePath });
+            exec('deactivate', { cwd: item.servicePath });
             // @ts-ignore
           } else if (process.env.CONDA_DEFAULT_ENV) {
             log.info(`Deactivating conda env`);
 
             // Handle conda deactivation
-            exec('conda deactivate', { cwd: servicePath });
+            exec('conda deactivate', { cwd: item.servicePath });
           }
         } catch (err) {
           log.error(`Failed to deactivate Python environment`, err);

@@ -23,7 +23,7 @@ export async function generateDockerCompose(appConfig: AppConfig, appDir: string
   // Generate docker-compose.yml content
   const services: Record<string, DockerServiceConfig> = {};
 
-  for (const service of appConfig.services) {
+  for (const service of appConfig.items) {
     const serviceConfig: DockerServiceConfig = {
       build: {
         context: '.',
@@ -125,7 +125,7 @@ ${Object.entries(services)
   writeFileSync(dockerComposePath, dockerComposeContent);
 
   // Generate Dockerfiles for each service
-  for (const service of appConfig.services) {
+  for (const service of appConfig.items) {
     const dockerfilePath = join(appDir, `Dockerfile.${service.id}`);
     let dockerfileContent = '';
 

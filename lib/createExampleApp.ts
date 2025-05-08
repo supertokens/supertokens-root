@@ -1,18 +1,18 @@
 import { exec } from 'child_process';
 import path from 'path';
 import { RecipeConfig } from './types';
-import { ServiceTarget } from './constants';
+import { ItemTarget } from './constants';
 
 export const createExampleApp = async (
   params: {
-    frontendFramework: ServiceTarget.React | ServiceTarget.Angular | ServiceTarget.Vue | ServiceTarget.Solid;
+    frontendFramework: ItemTarget.React | ItemTarget.Angular | ItemTarget.Vue | ItemTarget.Solid;
     backendFramework:
-      | ServiceTarget.Express
-      | ServiceTarget.Nest
-      | ServiceTarget.Koa
-      | ServiceTarget.FastAPI
-      | ServiceTarget.Flask
-      | ServiceTarget.Django;
+      | ItemTarget.Express
+      | ItemTarget.Nest
+      | ItemTarget.Koa
+      | ItemTarget.FastAPI
+      | ItemTarget.Flask
+      | ItemTarget.Django;
     apiHost: string;
     clientHost: string;
     apiPort: number;

@@ -9,17 +9,17 @@ import {
   FRONTEND_TARGETS,
   BACKEND_TARGETS,
   NODE_RUNTIME_TARGETS,
-  ServiceTarget,
+  ItemTarget,
   PYTHON_RUNTIME_TARGETS,
   MODULE_TARGETS,
   BASE_PACKAGES_DIR,
   logger,
+  LIB_TARGETS,
 } from '../lib';
-import { writePythonSDKServiceConfig } from './writeConfig';
 
 export const generateSDKService = async (params: {
   id: string;
-  target: ServiceTarget;
+  target: ItemTarget;
   host: string;
   port: number;
   config: { apiPort?: number; apiHost?: string; clientPort?: number; clientHost?: string; coreURI?: string };
@@ -224,12 +224,26 @@ const setupNodeSDKService = async (params: {
   runtimeSetCommand: string;
   libs: string[];
 }) => {
-  const log = logger(params.id);
-
   const shouldInstallAndGenerate = params.force || !fs.existsSync(params.servicePath);
   if (shouldInstallAndGenerate) {
     await generateSDKService(params);
+  }
 
+  return setupNodeItem(params);
+};
+
+const setupNodeItem = async (params: {
+  id: string;
+  target: (typeof MODULE_TARGETS | typeof LIB_TARGETS | typeof NODE_RUNTIME_TARGETS)[number];
+  force?: boolean;
+  servicePath: string;
+  appConfig: AppConfig;
+  runtimeSetCommand: string;
+  libs: string[];
+}) => {
+  const log = logger(params.id);
+
+  if (params.force) {
     log.info(`Installing dependencies`);
 
     await new Promise<void>((resolve, reject) => {
@@ -322,40 +336,9 @@ const setupPythonSDKService = async (params: {
   return true;
 };
 
-const setupCoreService = async (params: {
-  id: string;
-  host: string;
-  port: number;
-  servicePath: string;
-  force?: boolean;
-  appConfig: AppConfig;
-  runtimeSetCommand: string;
-}) => {
-  // nothing to be setup here. since the service is actually the core package itself, we just return the srcPath
-  // the java version is not changeable at the moment, so we don't need to return the runtimeSetCommand
-
-  if (!fs.existsSync(params.servicePath)) {
-    fs.mkdirSync(params.servicePath, { recursive: true });
-  }
-
-  const coreConfig = `
-core_config_version: 0
-disable_telemetry: true
-port: ${params.port}
-host: ${params.host}
-`;
-  fs.writeFileSync(path.join(params.servicePath, 'config.yaml'), coreConfig);
-
-  fs.cpSync(path.join(params.servicePath, 'config.yaml'), path.join(params.servicePath, 'devConfig.yaml'), {
-    recursive: true,
-  });
-
-  return true;
-};
-
 export const setupTarget = async (service: {
   id: string;
-  target: ServiceTarget;
+  target: ItemTarget;
   host: string;
   port: number;
   config: {
@@ -377,8 +360,16 @@ export const setupTarget = async (service: {
     return setupNodeSDKService({ ...service, target: service.target as (typeof NODE_RUNTIME_TARGETS)[number] });
   } else if (PYTHON_RUNTIME_TARGETS.find((target) => target === service.target)) {
     return setupPythonSDKService({ ...service, target: service.target as (typeof PYTHON_RUNTIME_TARGETS)[number] });
-  } else if (service.target === ServiceTarget.SupertokensCore) {
-    return setupCoreService(service);
+  } else if (service.target === ItemTarget.SupertokensCore) {
+    return; // nothing to be setup here. possibly later on
+  } else if (
+    MODULE_TARGETS.find((target) => target === service.target) ||
+    LIB_TARGETS.find((target) => target === service.target)
+  ) {
+    return setupNodeItem({
+      ...service,
+      target: service.target as (typeof MODULE_TARGETS | typeof LIB_TARGETS)[number],
+    });
   } else {
     console.warn(`Unsupported service target for "${service.id}": ${service.target}`);
   }

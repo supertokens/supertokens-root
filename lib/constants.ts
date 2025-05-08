@@ -5,7 +5,7 @@ export const BASE_PACKAGES_DIR = path.join(BASE_DIR, 'packages');
 export const BASE_TMP_DIR = path.join(BASE_DIR, './.tmp');
 export const BASE_APP_DIR = path.join(BASE_TMP_DIR, 'apps');
 
-export enum ServiceTarget {
+export enum ItemTarget {
   Flask = 'flask',
   FastAPI = 'fastapi',
   Django = 'django',
@@ -29,38 +29,28 @@ export enum ServiceTarget {
   Dashboard = 'dashboard',
 }
 
-export const FRONTEND_TARGETS = [
-  ServiceTarget.React,
-  ServiceTarget.Solid,
-  ServiceTarget.Vue,
-  ServiceTarget.Angular,
-] as const;
+export const FRONTEND_TARGETS = [ItemTarget.React, ItemTarget.Solid, ItemTarget.Vue, ItemTarget.Angular] as const;
 export const BACKEND_TARGETS = [
-  ServiceTarget.Flask,
-  ServiceTarget.FastAPI,
-  ServiceTarget.Django,
-  ServiceTarget.Express,
-  ServiceTarget.Koa,
-  ServiceTarget.Nest,
+  ItemTarget.Flask,
+  ItemTarget.FastAPI,
+  ItemTarget.Django,
+  ItemTarget.Express,
+  ItemTarget.Koa,
+  ItemTarget.Nest,
 ] as const;
 
-export const PYTHON_RUNTIME_TARGETS = [ServiceTarget.Flask, ServiceTarget.FastAPI, ServiceTarget.Django] as const;
-export const NODE_RUNTIME_TARGETS = [
-  ...FRONTEND_TARGETS,
-  ServiceTarget.Express,
-  ServiceTarget.Koa,
-  ServiceTarget.Nest,
-] as const;
+export const PYTHON_RUNTIME_TARGETS = [ItemTarget.Flask, ItemTarget.FastAPI, ItemTarget.Django] as const;
+export const NODE_RUNTIME_TARGETS = [...FRONTEND_TARGETS, ItemTarget.Express, ItemTarget.Koa, ItemTarget.Nest] as const;
 
 export const LIB_TARGETS = [
-  ServiceTarget.SupertokensPython,
-  ServiceTarget.SupertokensWebJs,
-  ServiceTarget.SupertokensNode,
-  ServiceTarget.SupertokensAuthReact,
-  ServiceTarget.SupertokensCreateApp,
+  ItemTarget.SupertokensPython,
+  ItemTarget.SupertokensWebJs,
+  ItemTarget.SupertokensNode,
+  ItemTarget.SupertokensAuthReact,
+  ItemTarget.SupertokensCreateApp,
 ] as const;
-export const MODULE_TARGETS = [ServiceTarget.SupertokensCore, ServiceTarget.Docs, ServiceTarget.Dashboard] as const;
+export const MODULE_TARGETS = [ItemTarget.SupertokensCore, ItemTarget.Docs, ItemTarget.Dashboard] as const;
 export const SERVICE_TARGETS = [...BACKEND_TARGETS, ...FRONTEND_TARGETS] as const;
 
-export const DEFAULT_BACKEND_TARGET = ServiceTarget.Express;
-export const DEFAULT_FRONTEND_TARGET = ServiceTarget.React;
+export const DEFAULT_BACKEND_TARGET = ItemTarget.Express;
+export const DEFAULT_FRONTEND_TARGET = ItemTarget.React;
