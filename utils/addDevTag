@@ -102,6 +102,6 @@ fi
 
 git tag dev-v$version $commit_hash
 
-git push --tags
+git push --tags --follow-tags
 
 echo "Added dev tag. PLEASE BE SURE TO CHECK THAT THE LATEST JARS HAVE BEEN COMMITTED!"
