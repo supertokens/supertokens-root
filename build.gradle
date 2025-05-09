@@ -6,7 +6,7 @@ buildscript {
 
 plugins {
     id "com.diffplug.spotless" version "5.15.2"
-    id "org.ec4j.editorconfig" version "0.0.3"
+    id "org.ec4j.editorconfig" version "0.1.0"
 }
 
 repositories {

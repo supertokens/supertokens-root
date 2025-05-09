@@ -9,7 +9,7 @@ esac
 
 ## fetching the appropriate jre from github
 curl -o jre.zip -s -X GET \
-	"https://raw.githubusercontent.com/supertokens/jre/master/jre-15.0.1-${OS}.zip"
+	"https://raw.githubusercontent.com/supertokens/jre/master/jre-21.0.7-${OS}.zip"
 
 ## fetching docker-entrypoint.sh from github if file doesn't exists
 if [ ! -f docker-entrypoint.sh ]; then

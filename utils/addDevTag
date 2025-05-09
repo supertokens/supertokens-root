@@ -6,7 +6,7 @@ if [[ $(git log origin/master ^HEAD) ]]; then
 fi
 
 # Verify java version
-REQUIRED_JAVA_VERSION="15.0.1"
+REQUIRED_JAVA_VERSION="21.0.7"
 JAVA_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
 
 if [[ "$JAVA_VERSION" == "$REQUIRED_JAVA_VERSION" ]]; then
@@ -64,12 +64,9 @@ if [[ `git tag -l --points-at $commit_hash` == "" ]]
 then
 	continue=1
 else
-	RED='\033[0;31m'
-	NC='\033[0m'
-	printf "${RED}This commit already has a tag. Please remove that and re-run this script${NC}\n"
-	echo "git tag --delete <tagName>"
-	echo "git push --delete origin <tagName>"
-	exit 1
+	# delete the dev tag if it exists
+    git push --delete origin dev-v$version || true
+    git tag -d dev-v$version || true
 fi
 
 
@@ -105,6 +102,6 @@ fi
 
 git tag dev-v$version $commit_hash
 
-git push --tags
+git push --tags --follow-tags
 
 echo "Added dev tag. PLEASE BE SURE TO CHECK THAT THE LATEST JARS HAVE BEEN COMMITTED!"
