@@ -98,8 +98,11 @@ then
 	commit_hash=`git log --pretty=format:'%H' -n 1`
 fi
 
-# tag this commit and push it------------
+# delete any previous dev tag
+git push --delete origin dev-v$version || true
+git tag -d dev-v$version || true
 
+# tag this commit and push it------------
 git tag dev-v$version $commit_hash
 
 git push --tags --follow-tags
