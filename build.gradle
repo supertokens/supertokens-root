@@ -18,6 +18,73 @@ dependencies {
 
 }
 
+subprojects {
+    tasks.register('generateDependenciesJson') {
+        group = 'supertokens'
+        shouldRunAfter("build")
+        description = 'Generates a JSON file containing the list of implementation dependencies URLs for the actual (sub)project.'
+        outputs.file("${layout.projectDirectory}/dependencies.json")
+        doLast {
+            def jsonOutput = "{\n\"_comment\": \"Contains list of implementation dependencies URL for this project. " +
+                    "This is a generated file, don't modify the contents by hand." +
+                    "\",\n" +
+                    "\"list\": ["
+            configurations.compileClasspath.resolvedConfiguration.firstLevelModuleDependencies.each { dep ->
+                def addToJson
+                addToJson = { resolvedDep ->
+                    for (ArtifactRepository repository : repositories.asList()) {
+                        def url = repository.properties.get('url')
+                        def jarUrl = String.format("%s%s/%s/%s/%s-%s.jar", url.toString(),
+                                resolvedDep.module.id.group.replace('.', '/'), resolvedDep.module.id.name, resolvedDep.
+                                module.id.version,
+                                resolvedDep.module.id.name, resolvedDep.module.id.version)
+                        def sourceUrl = String.format("%s%s/%s/%s/%s-%s-sources.jar", url.toString(),
+                                resolvedDep.module.id.group.replace('.', '/'), resolvedDep.module.id.name, resolvedDep.
+                                module.id.version,
+                                resolvedDep.module.id.name, resolvedDep.module.id.version)
+                        try {
+                            def jarfile = new URL(jarUrl)
+                            def inStream = jarfile.openStream();
+                            if (inStream != null) {
+                                println(String.format("%s:%s:%s", resolvedDep.module.id.group, resolvedDep.module.id.name, resolvedDep.module.id.version)
+                                        + " -> " + jarUrl)
+                                jsonOutput += "\n\t{\n"
+                                jsonOutput += "\t\t\"jar\":\"${jarUrl}\",\n" +
+                                        "\t\t\"name\":\"${resolvedDep.module.id.name} " +
+                                        "${resolvedDep.module.id.version}\",\n" +
+                                        "\t\t\"source\":\"${sourceUrl}\"\n" +
+                                        "\t},"
+                                if (resolvedDep.children.size() != 0) {
+                                    resolvedDep.children.each { childResolvedDep ->
+                                        if (resolvedDep in childResolvedDep.getParents() && childResolvedDep.getConfiguration() == 'compile') {
+                                            addToJson(childResolvedDep)
+                                        }
+                                    }
+                                    if (jsonOutput[-1] == ',') {
+                                        jsonOutput = jsonOutput[0..-2]
+                                    }
+                                }
+                            }
+                        } catch (Exception ignored) {
+                            println(ignored.getMessage())
+                        }
+                    }
+                }
+                addToJson(dep)
+            }
+            if (jsonOutput[-1] == ',') {
+                jsonOutput = jsonOutput[0..-2]
+            }
+            jsonOutput += "\n]\n}"
+            println jsonOutput
+            var jsonFile = file("${layout.projectDirectory}/implementationDependencies.json")
+            jsonFile.createNewFile()
+            jsonFile.write(jsonOutput)
+        }
+    }
+}
+
+
 spotless {
     // optional: limit format enforcement to just the files changed by this feature branch
 //   ratchetFrom 'origin/master'
@@ -40,79 +107,6 @@ spotless {
         // optionally, Spotless can set copyright years by digging
         // through git history (see "license" section below)
         // licenseHeader '/* (C)$YEAR */'
-    }
-}
-
-tasks.register('generateDependenciesJson') {
-    doLast {
-        def jsonOutput = "["
-        configurations.compileClasspath.resolvedConfiguration.firstLevelModuleDependencies.each { dep ->
-            def addToJson
-            addToJson = { resolvedDep ->
-                jsonOutput += "\n{"
-                jsonOutput += "\"groupId\":\"${resolvedDep.module.id.group}\",\"artifactId\":\"${resolvedDep.module.id.name}\",\"version\":\"${resolvedDep.module.id.version}\",\"file\":\"${resolvedDep.getModuleArtifacts()[0].file}\""
-                jsonOutput += ",\"dependencies\":["
-                if (resolvedDep.children.size() != 0) {
-                    resolvedDep.children.each { childResolvedDep ->
-                        if (resolvedDep in childResolvedDep.getParents() && childResolvedDep.getConfiguration() == 'compile') {
-                            addToJson(childResolvedDep)
-                        }
-                    }
-                    if (jsonOutput[-1] == ',') {
-                        jsonOutput = jsonOutput[0..-2]
-                    }
-                }
-                jsonOutput += "]},"
-            }
-            addToJson(dep)
-        }
-        if (jsonOutput[-1] == ',') {
-            jsonOutput = jsonOutput[0..-2]
-        }
-        jsonOutput += "]"
-        println jsonOutput
-    }
-}
-
-tasks.register('getURLDeps') {
-    doFirst {
-        println("doing something")
-        configurations.compileClasspath.incoming.resolutionResult.allDependencies.each { dependency ->
-            println("dependency: " + dependency.requested)
-            for (ArtifactRepository repository : repositories.asList()) {
-                def url = repository.properties.get('url')
-                println(url)
-                //https://repo.maven.apache.org/maven2/com/google/code/gson/gson/2.8.6/gson-2.8.6.jar
-                def jarUrl = String.format("%s%s/%s/%s/%s-%s.jar", url.toString(),
-                        dependency.group.replace('.', '/'), dependency.name, dependency.version,
-                        dependency.name, dependency.version)
-                try {
-                    def jarfile = new URL(jarUrl)
-                    def inStream = jarfile.openStream();
-                    if (inStream != null) {
-                        println(String.format("%s:%s:%s", dependency.group, dependency.name, dependency.version)
-                                + " -> " + jarUrl)
-                        return
-                    }
-                } catch (Exception ignored) {
-                    println(ignored.getMessage())
-                }
-            }
-        }
-    }
-}
-
-tasks.register('printDepsTreeInJson') {
-    doLast {
-        configurations.compileClasspath.incoming.resolutionResult.allDependencies.each { depResult ->
-            def from = depResult.from
-            def requested = depResult.requested
-
-            println groovy.json.JsonOutput.toJson([
-                    from     : from.toString(),
-                    requested: requested.toString()
-            ])
-        }
     }
 }
 
