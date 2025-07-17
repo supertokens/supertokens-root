@@ -52,7 +52,7 @@ subprojects {
                                 jsonOutput += "\t\t\"jar\":\"${jarUrl}\",\n" +
                                         "\t\t\"name\":\"${resolvedDep.module.id.name} " +
                                         "${resolvedDep.module.id.version}\",\n" +
-                                        "\t\t\"source\":\"${sourceUrl}\"\n" +
+                                        "\t\t\"src\":\"${sourceUrl}\"\n" +
                                         "\t},"
                                 if (resolvedDep.children.size() != 0) {
                                     resolvedDep.children.each { childResolvedDep ->
