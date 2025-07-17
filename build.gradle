@@ -25,6 +25,7 @@ subprojects {
         description = 'Generates a JSON file containing the list of implementation dependencies URLs for the actual (sub)project.'
         outputs.file("${layout.projectDirectory}/dependencies.json")
         doLast {
+            def depsAddedToJson = new HashSet<String>()
             def jsonOutput = "{\n\"_comment\": \"Contains list of implementation dependencies URL for this project. " +
                     "This is a generated file, don't modify the contents by hand." +
                     "\",\n" +
@@ -43,17 +44,19 @@ subprojects {
                                 module.id.version,
                                 resolvedDep.module.id.name, resolvedDep.module.id.version)
                         try {
+                            if (depsAddedToJson.contains(jarUrl)) {
+                                continue
+                            }
                             def jarfile = new URL(jarUrl)
                             def inStream = jarfile.openStream();
                             if (inStream != null) {
-                                println(String.format("%s:%s:%s", resolvedDep.module.id.group, resolvedDep.module.id.name, resolvedDep.module.id.version)
-                                        + " -> " + jarUrl)
                                 jsonOutput += "\n\t{\n"
                                 jsonOutput += "\t\t\"jar\":\"${jarUrl}\",\n" +
                                         "\t\t\"name\":\"${resolvedDep.module.id.name} " +
                                         "${resolvedDep.module.id.version}\",\n" +
                                         "\t\t\"src\":\"${sourceUrl}\"\n" +
                                         "\t},"
+                                depsAddedToJson.add(jarUrl)
                                 if (resolvedDep.children.size() != 0) {
                                     resolvedDep.children.each { childResolvedDep ->
                                         if (resolvedDep in childResolvedDep.getParents() && childResolvedDep.getConfiguration() == 'compile') {
@@ -63,7 +66,6 @@ subprojects {
                                 }
                             }
                         } catch (Exception ignored) {
-                            println(ignored.getMessage())
                         }
                     }
                 }
@@ -73,7 +75,6 @@ subprojects {
                 jsonOutput = jsonOutput[0..-2]
             }
             jsonOutput += "\n]\n}"
-            println jsonOutput
             var jsonFile = file("${layout.projectDirectory}/implementationDependencies.json")
             jsonFile.createNewFile()
             jsonFile.write(jsonOutput)
