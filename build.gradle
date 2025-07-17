@@ -60,9 +60,6 @@ subprojects {
                                             addToJson(childResolvedDep)
                                         }
                                     }
-                                    if (jsonOutput[-1] == ',') {
-                                        jsonOutput = jsonOutput[0..-2]
-                                    }
                                 }
                             }
                         } catch (Exception ignored) {
@@ -116,6 +113,9 @@ gradle.projectsEvaluated {
             filter {
                 setFailOnNoMatchingTests(false)
             }
+        }
+        tasks.named("build") {
+            finalizedBy("generateDependenciesJson")
         }
     }
 }
