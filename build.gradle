@@ -7,6 +7,7 @@ buildscript {
 plugins {
     id "com.diffplug.spotless" version "5.15.2"
     id "org.ec4j.editorconfig" version "0.1.0"
+    id "java"
 }
 
 repositories {
@@ -16,6 +17,71 @@ repositories {
 dependencies {
 
 }
+
+subprojects {
+    tasks.register('generateDependenciesJson') {
+        group = 'supertokens'
+        shouldRunAfter("build")
+        description = 'Generates a JSON file containing the list of implementation dependencies URLs for the actual (sub)project.'
+        outputs.file("${layout.projectDirectory}/dependencies.json")
+        doLast {
+            def depsAddedToJson = new HashSet<String>()
+            def jsonOutput = "{\n\"_comment\": \"Contains list of implementation dependencies URL for this project. " +
+                    "This is a generated file, don't modify the contents by hand." +
+                    "\",\n" +
+                    "\"list\": ["
+            configurations.compileClasspath.resolvedConfiguration.firstLevelModuleDependencies.each { dep ->
+                def addToJson
+                addToJson = { resolvedDep ->
+                    for (ArtifactRepository repository : repositories.asList()) {
+                        def url = repository.properties.get('url')
+                        def jarUrl = String.format("%s%s/%s/%s/%s-%s.jar", url.toString(),
+                                resolvedDep.module.id.group.replace('.', '/'), resolvedDep.module.id.name, resolvedDep.
+                                module.id.version,
+                                resolvedDep.module.id.name, resolvedDep.module.id.version)
+                        def sourceUrl = String.format("%s%s/%s/%s/%s-%s-sources.jar", url.toString(),
+                                resolvedDep.module.id.group.replace('.', '/'), resolvedDep.module.id.name, resolvedDep.
+                                module.id.version,
+                                resolvedDep.module.id.name, resolvedDep.module.id.version)
+                        try {
+                            if (depsAddedToJson.contains(jarUrl)) {
+                                continue
+                            }
+                            def jarfile = new URL(jarUrl)
+                            def inStream = jarfile.openStream();
+                            if (inStream != null) {
+                                jsonOutput += "\n\t{\n"
+                                jsonOutput += "\t\t\"jar\":\"${jarUrl}\",\n" +
+                                        "\t\t\"name\":\"${resolvedDep.module.id.name} " +
+                                        "${resolvedDep.module.id.version}\",\n" +
+                                        "\t\t\"src\":\"${sourceUrl}\"\n" +
+                                        "\t},"
+                                depsAddedToJson.add(jarUrl)
+                                if (resolvedDep.children.size() != 0) {
+                                    resolvedDep.children.each { childResolvedDep ->
+                                        if (resolvedDep in childResolvedDep.getParents() && childResolvedDep.getConfiguration() == 'compile') {
+                                            addToJson(childResolvedDep)
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+                addToJson(dep)
+            }
+            if (jsonOutput[-1] == ',') {
+                jsonOutput = jsonOutput[0..-2]
+            }
+            jsonOutput += "\n]\n}"
+            var jsonFile = file("${layout.projectDirectory}/implementationDependencies.json")
+            jsonFile.createNewFile()
+            jsonFile.write(jsonOutput)
+        }
+    }
+}
+
 
 spotless {
     // optional: limit format enforcement to just the files changed by this feature branch
@@ -48,6 +114,9 @@ gradle.projectsEvaluated {
             filter {
                 setFailOnNoMatchingTests(false)
             }
+        }
+        tasks.named("build") {
+            finalizedBy("generateDependenciesJson")
         }
     }
 }
