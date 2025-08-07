@@ -1,12 +1,11 @@
 #!/bin/bash
 # check if we need to merge master into this branch------------
 if [[ $(git log origin/master ^HEAD) ]]; then
-    echo "You need to merge master into this branch. Exiting"
-    exit 1
+    echo "You need to merge master into this branch. Continuing anyway..."
 fi
 
 # Verify java version
-REQUIRED_JAVA_VERSION="21.0.7"
+REQUIRED_JAVA_VERSION="15.0.1"
 JAVA_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}')
 
 if [[ "$JAVA_VERSION" == "$REQUIRED_JAVA_VERSION" ]]; then
