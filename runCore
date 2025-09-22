@@ -13,4 +13,10 @@ if which cygpath > /dev/null; then # Convert path to Windows-style if using Git 
   classpath="$(cygpath -C ANSI -w -p "${classpath}")"
 fi
 
-java -classpath "${classpath}" io.supertokens.Main ./ DEV
+java -Dotel.instrumentation.micrometer.enabled=true \
+    -Dcom.sun.management.jmxremote \
+    -Dcom.sun.management.jmxremote.port=9999 \
+    -Dcom.sun.management.jmxremote.ssl=false \
+    -Dcom.sun.management.jmxremote.authenticate=false \
+    -javaagent:./agent/opentelemetry-javaagent.jar \
+    -classpath "${classpath}" io.supertokens.Main ./ DEV
