@@ -59,9 +59,12 @@ do
  		    (cd $dir_name/downloader/ && ./runBuild noJarFolderChange)
  		    (cd $dir_name/ee/ && ./runBuild noJarFolderChange)
  			mkdir core > /dev/null 2>&1
+ 			mkdir agent > /dev/null 2>&1
  			cp $dir_name/build/libs/* core
  			if [[ $cicd = false ]]; then
  			  cp $dir_name/build/dependencies/* core > /dev/null 2>&1
+ 			  cp $dir_name/src/main/resources/* agent > /dev/null 2>&1  # include resources like opentelemetry-javaagent
+ 			  # .jar
  			fi
  			
  			# add to version_temp.yaml
