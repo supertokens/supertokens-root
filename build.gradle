@@ -23,7 +23,7 @@ subprojects {
         group = 'supertokens'
         shouldRunAfter("build")
         description = 'Generates a JSON file containing the list of implementation dependencies URLs for the actual (sub)project.'
-        outputs.file("${layout.projectDirectory}/dependencies.json")
+        outputs.file("${layout.projectDirectory}/implementationDependencies.json")
         doLast {
             def depsAddedToJson = new HashSet<String>()
             def jsonOutput = "{\n\"_comment\": \"Contains list of implementation dependencies URL for this project. " +
