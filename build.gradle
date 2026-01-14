@@ -59,7 +59,7 @@ subprojects {
                                 depsAddedToJson.add(jarUrl)
                                 if (resolvedDep.children.size() != 0) {
                                     resolvedDep.children.each { childResolvedDep ->
-                                        if (resolvedDep in childResolvedDep.getParents() && childResolvedDep.getConfiguration() == 'compile') {
+                                        if (resolvedDep in childResolvedDep.getParents()) {
                                             addToJson(childResolvedDep)
                                         }
                                     }
