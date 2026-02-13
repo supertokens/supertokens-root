@@ -16,16 +16,20 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
-rm -rf core
-rm -rf plugin-interface
-rm -rf plugin
-rm -rf cli
-rm -rf downloader
-rm -rf ee
-rm version.yaml
-rm -rf temp
-rm install
-rm install.bat
-rm LICENSE.md
-rm .testEnvRunning
+INSTALL_DIR="${INSTALL_DIR:-.}"
+
+rm -rf "$INSTALL_DIR/core"
+rm -rf "$INSTALL_DIR/plugin-interface"
+rm -rf "$INSTALL_DIR/plugin"
+rm -rf "$INSTALL_DIR/cli"
+rm -rf "$INSTALL_DIR/downloader"
+rm -rf "$INSTALL_DIR/ee"
+rm "$INSTALL_DIR/version.yaml"
+rm -rf "$INSTALL_DIR/temp"
+rm "$INSTALL_DIR/install"
+rm "$INSTALL_DIR/install.bat"
+rm "$INSTALL_DIR/LICENSE.md"
+rm "$INSTALL_DIR/.testEnvRunning"
+rm -rf "$INSTALL_DIR"/.started*
+rm -f "$INSTALL_DIR"/config*.yaml
 [[ $silent = false ]] && echo "Testing environment destroyed."

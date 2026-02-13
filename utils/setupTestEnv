@@ -1,7 +1,8 @@
 #!/bin/bash
 
-usage="Usage: setupTestEnvLocal [--help] [ [--cicd] | [--local] ]"
+usage="Usage: setupTestEnvLocal [--help] [ [--cicd] | [--local] ] [--skip-build]"
 cicd=false
+skip_build=false
 
 # Based on https://stackoverflow.com/a/33826763/11827673
 while [[ "$#" -gt 0 ]]; do
@@ -9,16 +10,22 @@ while [[ "$#" -gt 0 ]]; do
     -h|--help)   echo "$usage"; exit ;;
     -c|--cicd)   cicd=true   ;;
     -l|--local)  cicd=false  ;;
+    --skip-build) skip_build=true ;;
     *) echo "Unknown parameter passed: $1"; echo "$usage"; exit 1 ;;
   esac
   shift
 done
 
+INSTALL_DIR="${INSTALL_DIR:-.}"
+mkdir -p "$INSTALL_DIR"
+
 # load version and jars
 # setup jars, dependencies and version
 
-./gradlew clean
-touch version_temp.yaml
+if [[ $skip_build = false ]]; then
+  ./gradlew clean
+fi
+touch "$INSTALL_DIR/version_temp.yaml"
 
 prefix=`./utils/project-prefix`
 
@@ -40,33 +47,35 @@ do
           		counter=$(($counter+1))
       		done
  		done <<< "$line"
- 		
+
  		dir_name=$prefix-$repo_name
 
- 		if [[ $repo_name != "sqlite-plugin" ]]
+ 		if [[ $repo_name != "sqlite-plugin" ]] && [[ $skip_build = false ]]
         then
             # build
             echo ""
             echo "Building $dir_name..."
             (cd $dir_name/ && ./runBuild noJarFolderChange)
  		fi
- 		
+
  		# move jars to relevant place for testing
 
  		if [[ $dir_name = *"-core" ]]
  		then
- 		    (cd $dir_name/cli/ && ./runBuild noJarFolderChange)
- 		    (cd $dir_name/downloader/ && ./runBuild noJarFolderChange)
- 		    (cd $dir_name/ee/ && ./runBuild noJarFolderChange)
- 			mkdir core > /dev/null 2>&1
- 			mkdir agent > /dev/null 2>&1
- 			cp $dir_name/build/libs/* core
+ 		    if [[ $skip_build = false ]]; then
+ 		        (cd $dir_name/cli/ && ./runBuild noJarFolderChange)
+ 		        (cd $dir_name/downloader/ && ./runBuild noJarFolderChange)
+ 		        (cd $dir_name/ee/ && ./runBuild noJarFolderChange)
+ 		    fi
+ 			mkdir "$INSTALL_DIR/core" > /dev/null 2>&1
+ 			mkdir "$INSTALL_DIR/agent" > /dev/null 2>&1
+ 			cp $dir_name/build/libs/* "$INSTALL_DIR/core"
  			if [[ $cicd = false ]]; then
- 			  cp $dir_name/build/dependencies/* core > /dev/null 2>&1
- 			  cp $dir_name/src/main/resources/* agent > /dev/null 2>&1  # include resources like opentelemetry-javaagent
+ 			  cp $dir_name/build/dependencies/* "$INSTALL_DIR/core" > /dev/null 2>&1
+ 			  cp $dir_name/src/main/resources/* "$INSTALL_DIR/agent" > /dev/null 2>&1  # include resources like opentelemetry-javaagent
  			  # .jar
  			fi
- 			
+
  			# add to version_temp.yaml
  			core_version=`cat $dir_name/build.gradle | grep -e "version =" -e "version="`
  			while IFS='"' read -ra ADDR; do
@@ -79,44 +88,44 @@ do
 			  		counter=$(($counter+1))
 				done
 			done <<< "$core_version"
-			echo "core_version: $core_version" >> version_temp.yaml
+			echo "core_version: $core_version" >> "$INSTALL_DIR/version_temp.yaml"
 
             if [[ $cicd = true ]]; then
               curl -X GET \
                   "https://api.supertokens.io/core/dependency/jars?version=$core_version&planType=FREE&mode=DEV&withSource=false" \
                   -H 'api-version: 0' | jq '.links' | jq -c '.[]' | while read i; do \
-                  wget -P core/ `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
+                  wget -P "$INSTALL_DIR/core/" `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
             fi
-            mkdir cli > /dev/null 2>&1
-            cp $dir_name/cli/build/libs/* cli
+            mkdir "$INSTALL_DIR/cli" > /dev/null 2>&1
+            cp $dir_name/cli/build/libs/* "$INSTALL_DIR/cli"
             if [[ $cicd = true ]]; then
               curl -X GET \
                   "https://api.supertokens.io/cli/dependency/jars?version=$core_version&planType=FREE&mode=DEV
                   &withSource=false" \
                   -H 'api-version: 0' | jq '.links' | jq -c '.[]' | while read i; do \
-                  wget -P cli/ `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
+                  wget -P "$INSTALL_DIR/cli/" `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
             else
-              cp $dir_name/cli/build/dependencies/* cli > /dev/null 2>&1
+              cp $dir_name/cli/build/dependencies/* "$INSTALL_DIR/cli" > /dev/null 2>&1
             fi
 
-            mkdir downloader > /dev/null 2>&1
-            cp $dir_name/downloader/build/libs/* downloader
+            mkdir "$INSTALL_DIR/downloader" > /dev/null 2>&1
+            cp $dir_name/downloader/build/libs/* "$INSTALL_DIR/downloader"
 
-            mkdir ee > /dev/null 2>&1
-            cp $dir_name/ee/build/libs/* ee
+            mkdir "$INSTALL_DIR/ee" > /dev/null 2>&1
+            cp $dir_name/ee/build/libs/* "$INSTALL_DIR/ee"
 
-            cp $dir_name/install install
-            cp $dir_name/install.bat install.bat
+            cp $dir_name/install "$INSTALL_DIR/install"
+            cp $dir_name/install.bat "$INSTALL_DIR/install.bat"
 
-			cp $dir_name/LICENSE.md LICENSE.md
+			cp $dir_name/LICENSE.md "$INSTALL_DIR/LICENSE.md"
  		elif [[ $dir_name = *"-plugin-interface" ]]
  		then
- 			mkdir plugin-interface > /dev/null 2>&1
- 			cp $dir_name/build/libs/* plugin-interface
+ 			mkdir "$INSTALL_DIR/plugin-interface" > /dev/null 2>&1
+ 			cp $dir_name/build/libs/* "$INSTALL_DIR/plugin-interface"
  			if [[ $cicd = false ]]; then
- 			  cp $dir_name/build/dependencies/* plugin-interface > /dev/null 2>&1
+ 			  cp $dir_name/build/dependencies/* "$INSTALL_DIR/plugin-interface" > /dev/null 2>&1
       fi
- 			
+
  			# add to version_temp.yaml
  			pi_version=`cat $dir_name/build.gradle | grep -e "version =" -e "version="`
  			while IFS='"' read -ra ADDR; do
@@ -129,24 +138,24 @@ do
 			  		counter=$(($counter+1))
 				done
 			done <<< "$pi_version"
-			echo "plugin_interface_version: $pi_version" >> version_temp.yaml
-			
+			echo "plugin_interface_version: $pi_version" >> "$INSTALL_DIR/version_temp.yaml"
+
 			if [[ $cicd = true ]]; then
 			  curl -X GET \
           "https://api.supertokens.io/plugin-interface/dependency/jars?version=$pi_version&planType=FREE&mode=DEV&withSource=false" \
           -H 'api-version: 0' | jq '.links' | jq -c '.[]' | while read i; do \
-          wget -P plugin-interface/ `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
+          wget -P "$INSTALL_DIR/plugin-interface/" `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
       fi
-			
+
  		elif [[ $repo_name != "sqlite-plugin" ]]
  		then
- 			mkdir plugin > /dev/null 2>&1
- 			cp $dir_name/build/libs/* plugin
+ 			mkdir "$INSTALL_DIR/plugin" > /dev/null 2>&1
+ 			cp $dir_name/build/libs/* "$INSTALL_DIR/plugin"
  			if [[ $cicd = false ]]; then
- 			  cp $dir_name/build/dependencies/* plugin > /dev/null 2>&1
+ 			  cp $dir_name/build/dependencies/* "$INSTALL_DIR/plugin" > /dev/null 2>&1
  			fi
- 			
- 			
+
+
  			# add to version_temp.yaml
  			p_version=`cat $dir_name/build.gradle | grep -e "version =" -e "version="`
  			while IFS='"' read -ra ADDR; do
@@ -170,30 +179,30 @@ do
 			  		counter=$(($counter+1))
 				done
 			done <<< "$p_name"
-			echo "plugin_version: $p_version" >> version_temp.yaml
-			echo "plugin_name: $p_name" >> version_temp.yaml
+			echo "plugin_version: $p_version" >> "$INSTALL_DIR/version_temp.yaml"
+			echo "plugin_name: $p_name" >> "$INSTALL_DIR/version_temp.yaml"
 			if [[ $cicd = true ]]; then
 			  curl -X GET \
           "https://api.supertokens.io/plugin/dependency/jars?version=$p_version&name=$p_name&planType=FREE&mode=DEV&withSource=false" \
           -H 'api-version: 0' | jq '.links' | jq -c '.[]' | while read i; do \
-          wget -P plugin/ `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
+          wget -P "$INSTALL_DIR/plugin/" `echo $i | sed -e 's/^"//' -e 's/"$//'`; done
       fi
 		else
-		    mkdir plugin > /dev/null 2>&1
+		    mkdir "$INSTALL_DIR/plugin" > /dev/null 2>&1
  		fi
- 		
+
    	fi
 done
 
 # remove new line char from end for next use of this script
 printf %s "$(< modules.txt)" > modules.txt
 
-mv version_temp.yaml version.yaml
+mv "$INSTALL_DIR/version_temp.yaml" "$INSTALL_DIR/version.yaml"
 
 
 # fetch default license key and config
 ./utils/createConfigFileForTesting
-mkdir temp
-cp config.yaml temp/config.yaml
+mkdir "$INSTALL_DIR/temp"
+cp config.yaml "$INSTALL_DIR/temp/config.yaml"
 rm config.yaml
-touch .testEnvRunning
+touch "$INSTALL_DIR/.testEnvRunning"
