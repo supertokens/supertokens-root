@@ -1,0 +1,64 @@
+// ═══════════════════════════════════════════════════════════════════════
+// Gradle init script for capturing per-test stdout/stderr
+// Applied automatically via --init-script flag by the MCP server
+// ═══════════════════════════════════════════════════════════════════════
+
+import groovy.json.JsonOutput
+
+allprojects {
+    afterEvaluate {
+        tasks.withType(Test).configureEach { testTask ->
+            // Directory to store per-test output (alongside JUnit XML)
+            def outputDir = new File(testTask.reports.junitXml.outputLocation.asFile.get(), "test-output")
+
+            doFirst {
+                outputDir.mkdirs()
+                // Clean previous output
+                outputDir.listFiles()?.each { it.delete() }
+            }
+
+            // Maps to accumulate output per test
+            def testOutputs = new java.util.concurrent.ConcurrentHashMap<String, StringBuilder>()
+            def testErrors = new java.util.concurrent.ConcurrentHashMap<String, StringBuilder>()
+
+            // Capture stdout/stderr during tests
+            onOutput { descriptor, event ->
+                def testId = descriptor.className ? "${descriptor.className}.${descriptor.name}" : null
+                if (testId) {
+                    if (event.destination.name() == 'StdOut') {
+                        testOutputs.computeIfAbsent(testId) { new StringBuilder() }.append(event.message)
+                    } else if (event.destination.name() == 'StdErr') {
+                        testErrors.computeIfAbsent(testId) { new StringBuilder() }.append(event.message)
+                    }
+                }
+            }
+
+            afterTest { descriptor, result ->
+                def testId = "${descriptor.className}.${descriptor.name}"
+                def stdout = testOutputs.get(testId)?.toString() ?: ""
+                def stderr = testErrors.get(testId)?.toString() ?: ""
+
+                // Write JSON file for each test (even if no output, for completeness)
+                def safeFileName = testId.replaceAll('[^a-zA-Z0-9._-]', '_')
+                def outputFile = new File(outputDir, "${safeFileName}.json")
+                def data = [
+                    testId: testId,
+                    className: descriptor.className,
+                    testName: descriptor.name,
+                    stdout: stdout,
+                    stderr: stderr,
+                    resultType: result.resultType.name(),
+                    startTime: result.startTime,
+                    endTime: result.endTime,
+                    failureMessage: result.exception?.message ?: null,
+                    failureTrace: result.exception?.stackTrace?.take(20)?.collect { it.toString() } ?: null
+                ]
+                outputFile.text = JsonOutput.toJson(data)
+
+                // Clean up memory
+                testOutputs.remove(testId)
+                testErrors.remove(testId)
+            }
+        }
+    }
+}

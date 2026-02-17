@@ -111,7 +111,7 @@ spotless {
 }
 
 editorconfig {
-    excludes = ["jre/**", "build/**", "out/**", "gradle/**", "logs/**"]
+    excludes = ["jre/**", "build/**", "out/**", "gradle/**", "logs/**", ".test-runs"]
 }
 
 gradle.projectsEvaluated {

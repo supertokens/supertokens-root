@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "java-build": {
+      "command": "node",
+      "args": [
+        "./dev-tools/mcp-proxy.mjs"
+      ],
+      "env": {
+        "MCP_SSE_URL": "http://localhost:3000/sse",
+        "MCP_MESSAGES_URL": "http://localhost:3000/messages",
+        "MCP_DEBUG": "true"
+      }
+    }
+  }
+}

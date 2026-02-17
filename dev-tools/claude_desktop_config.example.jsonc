@@ -1,0 +1,23 @@
+// Example Claude Desktop MCP config using SSE transport.
+//
+// Prerequisites:
+//   1. Build and start the services:
+//      cd supertokens-root && docker compose up -d --build
+//   2. Copy this into your claude_desktop_config.json (remove comments)
+//      Update the path to dev-tools/mcp-proxy.mjs to match your system
+//   3. Restart Claude Desktop
+//
+// The MCP server runs as a docker-compose service on port 3000.
+// Claude Desktop launches the proxy script which connects via SSE.
+{
+  "mcpServers": {
+    "java-build": {
+      "command": "node",
+      "args": ["/path/to/supertokens-root/dev-tools/mcp-proxy.mjs"],
+      "env": {
+        "MCP_SSE_URL": "http://localhost:3000/sse",
+        "MCP_MESSAGES_URL": "http://localhost:3000/messages"
+      }
+    }
+  }
+}

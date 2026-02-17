@@ -171,3 +171,7 @@ fabric.properties
 .idea/GitScope.xml
 
 # End of https://www.gitignore.io/api/intellij
+
+.test-runs
+dev-tools/mcp-server/node_modules/
+pg_stat_monitor_output/

@@ -8,11 +8,12 @@ function cleanup {
   fi
 }
 
-usage="Usage: startTestEnv [--help] [--wait] [--silent] [--cicd] [--force]"
+usage="Usage: startTestEnv [--help] [--wait] [--silent] [--cicd] [--force] [--skip-build]"
 wait=false
 silent=false
 cicd=false
 force=false
+skip_build=false
 
 # Based on https://stackoverflow.com/a/33826763/11827673
 while [[ "$#" -gt 0 ]]; do
@@ -22,6 +23,7 @@ while [[ "$#" -gt 0 ]]; do
     -s|--silent) silent=true ;;
     -c|--cicd)   cicd=true   ;;
     -f|--force)  force=true  ;;
+    --skip-build) skip_build=true ;;
     *) echo "Unknown parameter passed: $1"; echo "$usage"; exit 1 ;;
   esac
   shift
@@ -35,11 +37,16 @@ fi
 trap cleanup EXIT
 
 [[ $silent = false ]] && echo "Setting up testing environment..."
+setup_args=""
 if [[ $cicd = true ]]; then
-  ./utils/setupTestEnv --cicd
+  setup_args="--cicd"
 else
-  ./utils/setupTestEnv --local
+  setup_args="--local"
 fi
+if [[ $skip_build = true ]]; then
+  setup_args="$setup_args --skip-build"
+fi
+./utils/setupTestEnv $setup_args
 
 
 if [[ $wait = true ]]; then

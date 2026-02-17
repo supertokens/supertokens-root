@@ -20,3 +20,5 @@ then
 	echo "ent"
 	exit 0
 fi
+
+echo "supertokens"

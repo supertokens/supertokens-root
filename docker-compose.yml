@@ -1,33 +1,123 @@
-version: '3'
+# ═══════════════════════════════════════════════════════════════════════
+# Java MCP Build Server + Test Infrastructure
+#
+# Usage:
+#   docker compose up -d          # start MCP server + test databases
+#   docker compose down           # stop  (data persists in volumes)
+#   docker compose down -v        # stop + wipe all data
+#   docker compose logs -f mcp    # tail MCP server logs
+#   docker compose logs -f pg     # tail PostgreSQL logs
+#
+# The MCP server runs as a service and exposes port 3000 for Claude
+# Desktop to connect via SSE transport.
+# ═══════════════════════════════════════════════════════════════════════
+
 services:
-  supertokens_mysql_db:
-    image: mysql/mysql-server:latest
-    container_name: mysql_supertokens
-    restart: always
+
+  # ── MCP Build Server ────────────────────────────────────────────────
+  mcp:
+    build: dev-tools/
+    restart: unless-stopped
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3000:3000"
     environment:
-      MYSQL_ROOT_USER: root
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: supertokens
-      MYSQL_ROOT_HOST: '%'
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: 500M
-  supertokens_postgres_db:
-    image: postgres:12
-    container_name: postgres_supertokens
-    restart: always
-    ports:
-      - '5432:5432'
+      MCP_TRANSPORT: sse
+      MCP_PORT: "3000"
+      TEST_PG_HOST: pg
+      TEST_PG_PORT: "5432"
+      TEST_PG_DB: supertokens
+      TEST_PG_USER: root
+      TEST_PG_PASSWORD: root
+      TEST_OAUTH_HOST: oauth
+      TEST_OAUTH_PUBLIC_PORT: "4444"
+      TEST_OAUTH_ADMIN_PORT: "4445"
+      COLLECT_PG_STAT_MONITOR: "true"
+      ERROR_LOG_PATH: "null"
+      INFO_LOG_PATH: "null"
+    volumes:
+      # Mount the project root as /workspace
+      - .:/workspace
+      # Persist Gradle cache for faster builds
+      - gradle-cache:/home/builder/.gradle
+    # Remove --read-only since we need tmpfs for Gradle
+    tmpfs:
+      - /tmp:rw,exec,nosuid,size=1g
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 12g
+    cpus: 8
+    pids_limit: 8192
+    depends_on:
+      pg:
+        condition: service_healthy
+
+  # ── PostgreSQL ───────────────────────────────────────────────────────
+  pg:
+    image: percona/percona-distribution-postgresql:13
+    restart: unless-stopped
     environment:
+      POSTGRES_USER:     root
       POSTGRES_PASSWORD: root
-      POSTGRES_USER: root
-      POSTGRES_DB: supertokens
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: 500M
+      POSTGRES_DB:       postgres
+    ports:
+      # Expose to host for convenience (e.g. psql / pgAdmin).
+      # The MCP container reaches it via pg:5432 on the Docker network.
+      - "127.0.0.1:5499:5432"
+    volumes:
+      # Persistent data — remove if you want a fresh DB every restart
+      # - pg_data:/var/lib/postgresql/data
+      # Drop .sql scripts here to auto-run on first start
+      - ./dev-tools/initdb/postgres:/docker-entrypoint-initdb.d:ro
+    tmpfs:
+      - /var/lib/postgresql/data:size=4g
+    mem_limit: 4g
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # Tuned for test workloads — aggressive settings, not for production
+    command: >
+      postgres
+        -c max_connections=1000
+        -c fsync=off
+        -c synchronous_commit=off
+        -c full_page_writes=off
+        -c wal_level=minimal
+        -c max_wal_senders=0
+        -c max_wal_size=2GB
+        -c shared_buffers=512MB
+        -c work_mem=64MB
+  oauth:
+    image: oryd/hydra:v2.2.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4498:4444"
+      - "127.0.0.1:4499:4445"
+    environment:
+      DSN: postgres://root:root@pg:5432/hydra?sslmode=disable
+      URLS_SELF_ISSUER: http://oauth:4444
+      URLS_LOGIN: http://localhost:3001/auth/oauth/login
+      URLS_CONSENT: http://localhost:3001/auth/oauth/consent
+      URLS_LOGOUT: http://localhost:3001/auth/oauth/logout
+      SECRETS_SYSTEM: thisIsATestSecretThatIsAtLeast32Chars
+      SECRETS_COOKIE: thisIsATestCookieSecretAtLeast32
+      SERVE_COOKIES_SAME_SITE_MODE: Lax
+    healthcheck:
+      test: ["CMD", "hydra", "health", "--endpoint", "http://127.0.0.1:4445"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    mem_limit: 2g
+    depends_on:
+      pg:
+        condition: service_healthy
+    entrypoint: ["sh", "-c"]
+    command: ["hydra migrate sql -e --yes && hydra serve all --dev"]
+
+
+volumes:
+  pg_data:
+  gradle-cache:
