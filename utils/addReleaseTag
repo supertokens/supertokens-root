@@ -114,6 +114,23 @@ then
   fi
 fi
 
+# Build and commit JARs to ensure the repo has the release build
+./runBuild
+if [[ $? -ne 0 ]]
+then
+    echo "Failed to build"
+    exit 1
+fi
+
+# We have to do git add twice like this otherwise jar changes in ./jar/* do not get added
+git add --all "./jar/*" > /dev/null 2>&1
+git add --all "./**/jar/*" > /dev/null 2>&1
+
+if ! git diff --cached --quiet 2>/dev/null; then
+    git commit -m "build for release v$version"
+    git push
+fi
+
 releasePassword=`cat ../releasePassword`
 
 # now we call the patch API to make it release mode
