@@ -122,6 +122,14 @@ fi
 
 releasePassword=`cat ../releasePassword`
 
+# Whether this core release ships DB schema changes (the postgresql plugin
+# has a migration script for this X.Y). Passed down from the release
+# workflow's has-db-migration input via the HAS_DB_MIGRATION env var;
+# defaults to false so direct/legacy invocations keep working. When true,
+# the SaaS backend skips its ECS rollout (with an alert + pending marker)
+# if it doesn't know the migration yet — the release itself always proceeds.
+hasDBMigration=${HAS_DB_MIGRATION:-false}
+
 # now we call the patch API to make it release mode
 if [[ $packageType == "core" ]]
 then
@@ -133,7 +141,8 @@ then
           \"password\": \"$releasePassword\",
           \"planType\":\"FREE\",
           \"version\":\"$version\",
-          \"release\": true
+          \"release\": true,
+          \"hasDBMigration\": $hasDBMigration
       }"`
 elif [[ $packageType == "plugin" ]]
 then
