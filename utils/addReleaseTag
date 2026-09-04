@@ -131,9 +131,11 @@ releasePassword=`cat ../releasePassword`
 hasDBMigration=${HAS_DB_MIGRATION:-false}
 
 # now we call the patch API to make it release mode
+# Capture the response body so a non-200 shows *why* it failed, not just the code.
+responseBody=$(mktemp)
 if [[ $packageType == "core" ]]
 then
-  responseStatus=`curl -s -o /dev/null -w "%{http_code}" -X PATCH \
+  responseStatus=`curl -s -o "$responseBody" -w "%{http_code}" -X PATCH \
       https://api.supertokens.io/0/core \
       -H 'Content-Type: application/json' \
       -H 'api-version: 0' \
@@ -146,7 +148,7 @@ then
       }"`
 elif [[ $packageType == "plugin" ]]
 then
-  responseStatus=`curl -s -o /dev/null -w "%{http_code}" -X PATCH \
+  responseStatus=`curl -s -o "$responseBody" -w "%{http_code}" -X PATCH \
       https://api.supertokens.io/0/plugin \
       -H 'Content-Type: application/json' \
       -H 'api-version: 0' \
@@ -165,9 +167,14 @@ if [ $responseStatus -ne "200" ]
 then
     RED='\033[0;31m'
     NC='\033[0m'
-    printf "${RED}patch api failed. Please try again.${NC}\n"
-    git tag --delete v$version
-    git push --delete origin v$version
+    printf "${RED}patch api failed (HTTP $responseStatus). Please try again.${NC}\n"
+    printf "${RED}Response body:${NC}\n"
+    cat "$responseBody" 2>/dev/null
+    echo
+    # Nothing to roll back here: the v$version tag is only created after a
+    # successful PATCH (below), so it does not exist at this point. The old
+    # code deleted it unconditionally, which just produced misleading
+    # "tag not found" / "remote ref does not exist" errors.
     exit 1
 fi
 
