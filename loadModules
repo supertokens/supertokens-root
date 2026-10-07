@@ -7,6 +7,19 @@ git update-index --skip-worktree .idea/runConfigurations/CLI_Main.xml
 git update-index --skip-worktree .idea/compiler.xml
 git update-index --skip-worktree .idea/vcs.xml
 
+# CI: the private security mirrors (supertokens/*-security) run on smaller GitHub-hosted
+# runners (~7GB) than the public repos (16GB), so the 12GB gradle daemon heap in
+# gradle.properties cannot start and the build OOMs. Cap it to 4GB there (the full test
+# suite passes at 4GB); public repos are unaffected. A value in GRADLE_USER_HOME/
+# gradle.properties overrides the project heap, and this runs before any gradle invocation.
+if [[ "${GITHUB_REPOSITORY:-}" == *-security ]]; then
+  _gradle_home="${GRADLE_USER_HOME:-$HOME/.gradle}"
+  mkdir -p "$_gradle_home"
+  if ! grep -qs '^org.gradle.jvmargs=-Xmx4g$' "$_gradle_home/gradle.properties"; then
+    echo "org.gradle.jvmargs=-Xmx4g" >> "$_gradle_home/gradle.properties"
+  fi
+fi
+
 
 prefix=`./utils/project-prefix`
 
