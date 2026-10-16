@@ -225,24 +225,43 @@ then
 
 fi
 
+# Stops at the first failed step of the master update. The v$version tag is already pushed at this
+# point, so print what is left to do by hand and exit 1 instead of carrying on to "Done!" (a merge
+# conflict here used to be ignored, leaving master on the previous release).
+# usage: master_update_failed <release branch> <what failed>
+master_update_failed() {
+  RED='\033[0;31m'
+  NC='\033[0m'
+  git merge --abort 2>/dev/null
+  git checkout -q "$1" 2>/dev/null
+  printf "${RED}v$version is tagged, but master was NOT updated: $2.${NC}\n"
+  printf "${RED}Merge the release into master by hand (resolve any conflicts):${NC}\n"
+  echo "git checkout master"
+  echo "git merge $1"
+  echo "git push"
+  echo "git checkout $1"
+  exit 1
+}
+
 if [[ $response == "true" ]]
 then
   echo "pushing to master..."
   if [[ $branch_name == "(unnamed branch)" ]]
   then
-    git checkout -b forrelease
-    git merge master
-    git checkout master
-    git merge forrelease
-    git push
-    git checkout forrelease
+    git checkout -b forrelease || master_update_failed "$branch_name" "could not create the forrelease branch"
+    release_branch=forrelease
+  else
+    release_branch=$branch_name
+  fi
+  git merge master || master_update_failed "$release_branch" "merging master into $release_branch failed"
+  git checkout master || master_update_failed "$release_branch" "could not check out master"
+  git merge "$release_branch" || master_update_failed "$release_branch" "merging $release_branch into master failed"
+  git push || master_update_failed "$release_branch" "pushing master failed"
+  git checkout "$release_branch"
+  if [[ $branch_name == "(unnamed branch)" ]]
+  then
     echo "Done! Please delete this branch"
   else
-    git merge master
-    git checkout master
-    git merge $branch_name
-    git push
-    git checkout $branch_name
     echo "Done!"
   fi
 fi
