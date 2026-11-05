@@ -179,7 +179,15 @@ then
 fi
 
 git tag v$version
-git push --tags
+# Push only this tag, and stop if GitHub rejects it: the version is already marked released in the API at
+# this point, so carrying on would publish a GitHub release whose tag doesn't exist (gh release create would
+# then create the tag on the default branch) and update master from an untagged release.
+if ! git push origin "refs/tags/v$version"
+then
+  printf "${RED}pushing tag v$version failed. The version is already marked released in the API.${NC}\n"
+  printf "${RED}Push the tag by hand once GitHub accepts it: git push origin refs/tags/v$version (from this commit: $(git rev-parse HEAD))${NC}\n"
+  exit 1
+fi
 
 if [[ $packageType == "core" ]]
 then
