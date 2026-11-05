@@ -184,6 +184,8 @@ git tag v$version
 # then create the tag on the default branch) and update master from an untagged release.
 if ! git push origin "refs/tags/v$version"
 then
+  RED='\033[0;31m'
+  NC='\033[0m'
   printf "${RED}pushing tag v$version failed. The version is already marked released in the API.${NC}\n"
   printf "${RED}Push the tag by hand once GitHub accepts it: git push origin refs/tags/v$version (from this commit: $(git rev-parse HEAD))${NC}\n"
   exit 1
